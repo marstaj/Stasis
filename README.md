@@ -11,7 +11,9 @@ Pausing frees CPU, not RAM. A paused app keeps its memory until the compressor o
 
 ## Build and run
 
-Requires macOS 14+ and the Xcode command line tools (Swift 6).
+Requires macOS 14+. `make test` and `make build` need only the Xcode command line tools
+(Swift 6); `make run` and `make install` need full Xcode 26+ because the app icon is compiled
+from an Icon Composer document with `actool`.
 
 ```
 make test      # unit tests for the grouping / state / signal logic
@@ -19,8 +21,8 @@ make run       # build release, assemble build/AppPause.app, launch it
 make install   # same, then copy to /Applications and launch
 ```
 
-The `.app` wrapper is assembled by the Makefile from `Info.plist` and ad-hoc signed; there is
-no Xcode project. `swift run` works for quick iteration but shows a Dock icon and cannot
+The `.app` wrapper is assembled by the Makefile from `Info.plist` and the compiled
+`Resources/AppIcon.icon`, then ad-hoc signed; there is no Xcode project. `swift run` works for quick iteration but shows a Dock icon and cannot
 register launch-at-login, since both need the bundle.
 
 ## Notes
