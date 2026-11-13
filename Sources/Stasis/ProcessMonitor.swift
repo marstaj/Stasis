@@ -1,5 +1,5 @@
 import AppKit
-import AppPauseCore
+import StasisCore
 import Observation
 import os
 
@@ -14,7 +14,7 @@ final class ProcessMonitor {
     private var sampler = CPUSampler()
     private var timer: Timer?
     private var popoverVisible = false
-    private let logger = Logger(subsystem: "dev.marstaj.AppPause", category: "monitor")
+    private let logger = Logger(subsystem: "dev.marstaj.Stasis", category: "monitor")
     private let excludedBundleIdentifiers: Set<String> = [
         "com.apple.finder", "com.apple.dock", Bundle.main.bundleIdentifier ?? "",
     ]

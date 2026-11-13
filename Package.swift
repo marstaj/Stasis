@@ -2,15 +2,15 @@
 import PackageDescription
 
 let package = Package(
-    name: "AppPause",
+    name: "Stasis",
     platforms: [.macOS(.v14)],
     targets: [
-        .target(name: "AppPauseCore"),
+        .target(name: "StasisCore"),
         .executableTarget(
-            name: "AppPause",
-            dependencies: ["AppPauseCore"],
+            name: "Stasis",
+            dependencies: ["StasisCore"],
             linkerSettings: [.linkedFramework("AppKit"), .linkedFramework("ServiceManagement")]
         ),
-        .testTarget(name: "AppPauseCoreTests", dependencies: ["AppPauseCore"]),
+        .testTarget(name: "StasisCoreTests", dependencies: ["StasisCore"]),
     ]
 )

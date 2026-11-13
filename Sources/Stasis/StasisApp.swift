@@ -2,7 +2,7 @@ import AppKit
 import SwiftUI
 
 @main
-struct AppPauseApp: App {
+struct StasisApp: App {
     @NSApplicationDelegateAdaptor(StatusItemController.self) private var controller
 
     var body: some Scene {
@@ -66,6 +66,6 @@ final class StatusItemController: NSObject, NSApplicationDelegate, NSPopoverDele
 
     private func updateIcon() {
         let name = monitor.anyPaused ? "pause.circle.fill" : "pause.circle"
-        statusItem?.button?.image = NSImage(systemSymbolName: name, accessibilityDescription: "AppPause")
+        statusItem?.button?.image = NSImage(systemSymbolName: name, accessibilityDescription: "Stasis")
     }
 }

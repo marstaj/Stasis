@@ -1,13 +1,13 @@
-import AppPauseCore
+import StasisCore
 import Darwin
 import Foundation
 import os
 
-/// Reads the live process table. Pure OS glue; the logic that interprets it lives in AppPauseCore.
+/// Reads the live process table. Pure OS glue; the logic that interprets it lives in StasisCore.
 enum SystemProcessSource {
     /// `SSTOP` from <sys/proc.h>; the macro is not importable from Swift.
     private static let stoppedState: UInt8 = 4
-    private static let logger = Logger(subsystem: "dev.marstaj.AppPause", category: "process-source")
+    private static let logger = Logger(subsystem: "dev.marstaj.Stasis", category: "process-source")
 
     private static let timebase: mach_timebase_info_data_t = {
         var info = mach_timebase_info_data_t()

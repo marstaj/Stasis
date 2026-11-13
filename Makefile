@@ -1,4 +1,4 @@
-APP     := AppPause
+APP     := Stasis
 BUNDLE  := build/$(APP).app
 BINARY  := .build/release/$(APP)
 ICONDIR := build/icon

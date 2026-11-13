@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import AppPauseCore
+@testable import StasisCore
 
 private func proc(
     _ pid: pid_t, parent: pid_t = 1, path: String, stopped: Bool = false, bytes: UInt64 = 0

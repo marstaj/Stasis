@@ -1,5 +1,5 @@
 import AppKit
-import AppPauseCore
+import StasisCore
 import ServiceManagement
 import SwiftUI
 import os
@@ -202,7 +202,7 @@ private struct ToggleButton: View {
 private struct LaunchAtLoginToggle: View {
     @State private var enabled = SMAppService.mainApp.status == .enabled
     @State private var error: String?
-    private let logger = Logger(subsystem: "dev.marstaj.AppPause", category: "login-item")
+    private let logger = Logger(subsystem: "dev.marstaj.Stasis", category: "login-item")
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
