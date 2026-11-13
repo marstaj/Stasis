@@ -1,0 +1,42 @@
+{
+  "$schema": "https://www.raycast.com/schemas/extension.json",
+  "name": "stasis",
+  "title": "Stasis",
+  "description": "Pause and resume running apps through the Stasis menu bar utility.",
+  "icon": "icon.png",
+  "author": "marstaj",
+  "license": "MIT",
+  "commands": [
+    {
+      "name": "apps",
+      "title": "Pause / Resume Apps",
+      "description": "List running apps and pause or resume them in place.",
+      "mode": "view"
+    },
+    {
+      "name": "pause-all",
+      "title": "Pause All Apps",
+      "description": "Pause every app except the one in front.",
+      "mode": "no-view"
+    },
+    {
+      "name": "resume-all",
+      "title": "Resume All Apps",
+      "description": "Resume every paused or partially paused app.",
+      "mode": "no-view"
+    }
+  ],
+  "dependencies": {
+    "@raycast/api": "^2.12.1",
+    "@raycast/utils": "^2.3.3"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "typescript": "^7.0.2"
+  },
+  "scripts": {
+    "dev": "ray develop",
+    "build": "ray build -e dist",
+    "lint": "ray lint"
+  }
+}

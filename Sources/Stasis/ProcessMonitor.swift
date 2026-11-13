@@ -15,9 +15,7 @@ final class ProcessMonitor {
     private var timer: Timer?
     private var popoverVisible = false
     private let logger = Logger(subsystem: "dev.marstaj.Stasis", category: "monitor")
-    private let excludedBundleIdentifiers: Set<String> = [
-        "com.apple.finder", "com.apple.dock", Bundle.main.bundleIdentifier ?? "",
-    ]
+    private let excludedBundleIdentifiers = Workspace.systemExclusions.union([Bundle.main.bundleIdentifier ?? ""])
 
     var anyPaused: Bool { groups.contains { $0.state != .running } }
 
@@ -37,24 +35,9 @@ final class ProcessMonitor {
     }
 
     func refresh() {
-        // Excluded by pid as well as bundle id: the bundle id is nil when run outside a .app bundle.
-        let running = NSWorkspace.shared.runningApplications.filter {
-            $0.activationPolicy == .regular && $0.processIdentifier != getpid()
-        }
+        let running = Workspace.regularApplications()
         icons = Dictionary(running.compactMap { app in app.icon.map { (app.processIdentifier, $0) } }) { $1 }
-        let apps = running.map {
-            RunningApp(
-                pid: $0.processIdentifier,
-                name: $0.localizedName ?? $0.bundleIdentifier ?? "pid \($0.processIdentifier)",
-                bundleIdentifier: $0.bundleIdentifier,
-                bundlePath: $0.bundleURL?.path
-            )
-        }
-        groups = ProcessGrouper.group(
-            apps: apps,
-            processes: SystemProcessSource.allProcesses(includeUsage: popoverVisible),
-            excludedBundleIdentifiers: excludedBundleIdentifiers
-        )
+        groups = Workspace.snapshot(of: running, includeUsage: popoverVisible, excluding: excludedBundleIdentifiers)
         guard popoverVisible else {
             // Usage-free samples must not feed the sampler, or the first open would compute
             // rates against zero.

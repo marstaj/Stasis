@@ -1,10 +1,9 @@
-import StasisCore
 import Darwin
 import Foundation
 import os
 
-/// Reads the live process table. Pure OS glue; the logic that interprets it lives in StasisCore.
-enum SystemProcessSource {
+/// Reads the live process table. Pure OS glue; the logic that interprets it is in `ProcessGrouper`.
+public enum SystemProcessSource {
     /// `SSTOP` from <sys/proc.h>; the macro is not importable from Swift.
     private static let stoppedState: UInt8 = 4
     private static let logger = Logger(subsystem: "dev.marstaj.Stasis", category: "process-source")
@@ -17,7 +16,7 @@ enum SystemProcessSource {
 
     /// `includeUsage: false` skips the per-process rusage read and leaves memory and CPU time at 0,
     /// for callers that only need the pause state.
-    static func allProcesses(includeUsage: Bool = true) -> [ProcessRecord] {
+    public static func allProcesses(includeUsage: Bool = true) -> [ProcessRecord] {
         var mib: [Int32] = [CTL_KERN, KERN_PROC, KERN_PROC_ALL, 0]
         var size = 0
         guard sysctl(&mib, 4, nil, &size, nil, 0) == 0 else { return sysctlFailed() }

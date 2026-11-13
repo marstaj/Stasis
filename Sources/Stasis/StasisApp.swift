@@ -1,4 +1,5 @@
 import AppKit
+import StasisCore
 import SwiftUI
 
 @main
@@ -33,6 +34,13 @@ final class StatusItemController: NSObject, NSApplicationDelegate, NSPopoverDele
         item.button?.action = #selector(togglePopover)
         statusItem = item
         observeIcon()
+
+        // The CLI posts this after pausing or resuming; without it the icon lags up to 30 s.
+        DistributedNotificationCenter.default().addObserver(
+            forName: Workspace.didChangeNotification, object: nil, queue: .main
+        ) { [monitor] _ in
+            MainActor.assumeIsolated { monitor.refresh() }
+        }
     }
 
     @objc private func togglePopover() {
