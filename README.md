@@ -6,6 +6,7 @@ recover apps that macOS itself paused under memory pressure.
 Each app row shows its memory footprint and CPU rate; expand a row to see and toggle the
 individual processes (browser renderers, JVMs, helpers). Pause state is read from the kernel
 process table, so system-initiated pauses show up without the tool having been involved.
+The control at the top sorts the list by name, memory or CPU; the choice is remembered.
 
 The ✕ at the end of a row kills the app or process with `SIGKILL` (paused processes ignore
 anything gentler). It takes two clicks: the first arms it, moving the pointer away disarms it.

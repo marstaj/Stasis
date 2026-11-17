@@ -6,6 +6,7 @@ import os
 
 struct ContentView: View {
     let monitor: ProcessMonitor
+    @AppStorage("sortOrder") private var sortOrder = AppSortOrder.name
 
     var body: some View {
         VStack(spacing: 0) {
@@ -14,11 +15,18 @@ struct ContentView: View {
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, minHeight: 60)
             } else {
+                Picker("Sort by", selection: $sortOrder) {
+                    ForEach(AppSortOrder.allCases, id: \.self) { Text($0.title).tag($0) }
+                }
+                .pickerStyle(.segmented)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 8)
+                Divider()
                 // fixedSize makes the ScrollView take its ideal height (its content height) instead
                 // of the near-zero height the popover proposes; the frame caps it.
                 ScrollView {
                     VStack(spacing: 2) {
-                        ForEach(monitor.groups, id: \.app.pid) { group in
+                        ForEach(sortOrder.sorted(monitor.groups, cpuRate: monitor.cpuRate), id: \.app.pid) { group in
                             AppRow(group: group, monitor: monitor)
                         }
                     }
@@ -48,6 +56,16 @@ struct ContentView: View {
             }
         }
         .padding(10)
+    }
+}
+
+private extension AppSortOrder {
+    var title: String {
+        switch self {
+        case .name: "Name"
+        case .memory: "Memory"
+        case .cpu: "CPU"
+        }
     }
 }
 
