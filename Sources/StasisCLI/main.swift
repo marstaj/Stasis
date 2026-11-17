@@ -9,6 +9,7 @@ let usage = """
       list [--json] [--processes]      running apps with pause state and memory
       pause <app>                      pause an app (bundle id or name)
       resume <app>                     resume an app (bundle id or name)
+      kill <app>                       kill an app with SIGKILL; unsaved work is lost
       pause-all [--include-frontmost]  pause every app except the one in front
       resume-all                       resume every paused or partially paused app
 
@@ -36,8 +37,11 @@ func send(_ plan: SignalPlan) {
     // Run from a terminal that is itself a target, this process is a descendant of it and in the
     // plan; stopping ourselves halfway would leave the rest unsignalled.
     for pid in plan.pids where pid != getpid() && kill(pid, plan.signal.number) != 0 {
+        let code = errno
+        // Killing a parent can take its children down before their turn comes.
+        if plan.signal == .kill && code == ESRCH { continue }
         failures += 1
-        FileHandle.standardError.write(Data("kill(\(pid)) failed: \(String(cString: strerror(errno)))\n".utf8))
+        FileHandle.standardError.write(Data("kill(\(pid)) failed: \(String(cString: strerror(code)))\n".utf8))
     }
     Workspace.postDidChange()
     if failures > 0 {
@@ -111,6 +115,12 @@ case "pause", "resume":
     }
     send(SignalPlan(signal: pausing ? .stop : .continue, pids: group.processes.map(\.pid)))
     print("\(pausing ? "Paused" : "Resumed") \(group.app.name) (\(group.processes.count) processes)")
+
+case "kill":
+    let (_, positionals) = parse(rest, allowedFlags: [], positionals: 1)
+    let group = resolve(positionals[0], in: snapshot(includeUsage: false))
+    send(SignalPlan.kill(group))
+    print("Killed \(group.app.name) (\(group.processes.count) processes)")
 
 case "pause-all":
     let (flags, _) = parse(rest, allowedFlags: ["--include-frontmost"], positionals: 0)

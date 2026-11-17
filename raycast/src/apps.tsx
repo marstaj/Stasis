@@ -1,11 +1,11 @@
-import { Action, ActionPanel, Color, Icon, List, showToast, Toast } from "@raycast/api";
+import { Action, ActionPanel, Alert, Color, confirmAlert, Icon, List, showToast, Toast } from "@raycast/api";
 import { usePromise } from "@raycast/utils";
 import { runBulk } from "./bulk";
 import { App, formatMemory, listApps, stasis } from "./stasis";
 
-type Verb = "pause" | "resume";
+type Verb = "pause" | "resume" | "kill";
 
-const progressTitle: Record<Verb, string> = { pause: "Pausing", resume: "Resuming" };
+const progressTitle: Record<Verb, string> = { pause: "Pausing", resume: "Resuming", kill: "Killing" };
 
 /** Every app in one list; Enter toggles and the row stays where it is with its tag updated. */
 export default function Command() {
@@ -32,6 +32,15 @@ export default function Command() {
     revalidate();
   }
 
+  async function kill(app: App) {
+    const confirmed = await confirmAlert({
+      title: `Kill ${app.name}?`,
+      message: "Unsaved work in it will be lost.",
+      primaryAction: { title: "Kill", style: Alert.ActionStyle.Destructive },
+    });
+    if (confirmed) await run("kill", app);
+  }
+
   async function bulk(command: "pause-all" | "resume-all") {
     await runBulk(command);
     revalidate();
@@ -42,8 +51,8 @@ export default function Command() {
       <List.EmptyView title="No running apps" />
       {apps.map((app) => {
         // Enter on a partially paused app resumes it, like the menu bar; Pause stays available under ⌘K.
-        const primary: Verb = app.state === "running" ? "pause" : "resume";
-        const secondary: Verb = primary === "pause" ? "resume" : "pause";
+        const primary = app.state === "running" ? "pause" : "resume";
+        const secondary = primary === "pause" ? "resume" : "pause";
         return (
           <List.Item
             key={app.pid}
@@ -58,6 +67,13 @@ export default function Command() {
                     <Action title={capitalize(secondary)} icon={verbIcon(secondary)} onAction={() => run(secondary, app)} />
                   )}
                   <Action title="Refresh" icon={Icon.ArrowClockwise} shortcut={{ modifiers: ["cmd"], key: "r" }} onAction={revalidate} />
+                  <Action
+                    title="Kill"
+                    icon={Icon.XMarkCircle}
+                    style={Action.Style.Destructive}
+                    shortcut={{ modifiers: ["ctrl"], key: "x" }}
+                    onAction={() => kill(app)}
+                  />
                 </ActionPanel.Section>
                 <ActionPanel.Section>
                   <Action title="Pause All Apps" icon={Icon.Pause} shortcut={{ modifiers: ["cmd", "shift"], key: "p" }} onAction={() => bulk("pause-all")} />
@@ -72,7 +88,7 @@ export default function Command() {
   );
 }
 
-function verbIcon(verb: Verb) {
+function verbIcon(verb: "pause" | "resume") {
   return verb === "pause" ? Icon.Pause : Icon.Play;
 }
 

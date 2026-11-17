@@ -166,6 +166,19 @@ private let terminal = RunningApp(
         #expect(SignalPlan.toggle(stopped) == SignalPlan(signal: .continue, pids: [5]))
         #expect(SignalPlan.toggle(running) == SignalPlan(signal: .stop, pids: [6]))
     }
+
+    @Test func killingAppTargetsEveryProcessWhateverItsPauseState() {
+        for stopped in [[false, false], [false, true], [true, true]] {
+            let plan = SignalPlan.kill(group(stopped: stopped))
+            #expect(plan.signal == .kill)
+            #expect(plan.pids == [100, 101])
+        }
+    }
+
+    @Test func killingSingleProcessTargetsOnlyThatProcess() {
+        #expect(SignalPlan.kill(proc(5, path: "/x", stopped: true)) == SignalPlan(signal: .kill, pids: [5]))
+        #expect(SignalPlan.Signal.kill.number == SIGKILL)
+    }
 }
 
 @Suite struct CPUSamplerTests {

@@ -62,13 +62,34 @@ final class ProcessMonitor {
         send(SignalPlan.toggle(process), target: "\(process.name) (\(process.pid))")
     }
 
+    func forceQuit(_ group: AppGroup) {
+        send(SignalPlan.kill(group), target: group.app.name)
+    }
+
+    func forceQuit(_ process: ProcessRecord) {
+        send(SignalPlan.kill(process), target: "\(process.name) (\(process.pid))")
+    }
+
     private func send(_ plan: SignalPlan, target: String) {
         lastError = nil
         for pid in plan.pids where kill(pid, plan.signal.number) != 0 {
-            let reason = String(cString: strerror(errno))
+            let code = errno
+            // Killing a parent can take its children down before their turn comes.
+            if plan.signal == .kill && code == ESRCH { continue }
+            let reason = String(cString: strerror(code))
             logger.error("kill(\(pid), \(plan.signal.number)) for \(target) failed: \(reason)")
-            lastError = "Could not \(plan.signal == .stop ? "pause" : "resume") \(target): \(reason)"
+            lastError = "Could not \(plan.signal.verb) \(target): \(reason)"
         }
         refresh()
+    }
+}
+
+private extension SignalPlan.Signal {
+    var verb: String {
+        switch self {
+        case .stop: "pause"
+        case .continue: "resume"
+        case .kill: "kill"
+        }
     }
 }

@@ -7,6 +7,9 @@ Each app row shows its memory footprint and CPU rate; expand a row to see and to
 individual processes (browser renderers, JVMs, helpers). Pause state is read from the kernel
 process table, so system-initiated pauses show up without the tool having been involved.
 
+The ✕ at the end of a row kills the app or process with `SIGKILL` (paused processes ignore
+anything gentler). It takes two clicks: the first arms it, moving the pointer away disarms it.
+
 Pausing frees CPU, not RAM. A paused app keeps its memory until the compressor or swap takes it.
 
 ## Build and run
@@ -37,6 +40,7 @@ running and pokes the app to refresh its icon after a change.
 stasis list [--json] [--processes]      apps with state and memory; JSON is what Raycast reads
 stasis pause <app> / resume <app>       bundle id or name, case-insensitive; a partial name
                                         needs 3+ characters and must match exactly one app
+stasis kill <app>                       SIGKILL to the app and its processes, no confirmation
 stasis pause-all [--include-frontmost]  spares the app in front unless told otherwise
 stasis resume-all
 ```
@@ -47,7 +51,8 @@ Exit status: 1 usage, 2 no or ambiguous app (candidates on stderr), 3 some signa
 
 `raycast/` is a Raycast extension with three commands: Pause / Resume Apps (every app with
 memory and state, Enter pauses a running app or resumes a paused one, the row stays put), Pause
-All Apps and Resume All Apps, which are also actions inside the first. It shells out to the CLI at its
+All Apps and Resume All Apps, which are also actions inside the first. The list also has a Kill
+action (⌃X) that asks before it kills. It shells out to the CLI at its
 bundle path, so Stasis must be installed in `/Applications`. Needs Node; `make raycast` installs
 the npm dependencies and starts Raycast's dev server, which registers the extension. Stop the
 server once the commands appear in Raycast, they stay registered. Re-run it after changing the

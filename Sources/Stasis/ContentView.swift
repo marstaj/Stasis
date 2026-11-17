@@ -87,6 +87,7 @@ private struct AppRow: View {
                     Spacer(minLength: 8)
                     UsageColumn(bytes: group.totalResidentBytes, cpuRate: monitor.cpuRate(of: group))
                     ToggleButton(isStopped: group.state != .running) { monitor.toggle(group) }
+                    KillButton { monitor.forceQuit(group) }
                 }
                 .padding(.vertical, 6)
                 .padding(.trailing, 8)
@@ -99,9 +100,10 @@ private struct AppRow: View {
             if expanded {
                 VStack(spacing: 2) {
                     ForEach(group.processes, id: \.pid) { process in
-                        ProcessRow(process: process, cpuRate: monitor.cpuRates[process.pid]) {
-                            monitor.toggle(process)
-                        }
+                        ProcessRow(
+                            process: process, cpuRate: monitor.cpuRates[process.pid],
+                            toggle: { monitor.toggle(process) }, kill: { monitor.forceQuit(process) }
+                        )
                     }
                 }
                 .padding(.leading, 46)
@@ -141,6 +143,7 @@ private struct ProcessRow: View {
     let process: ProcessRecord
     let cpuRate: Double?
     let toggle: () -> Void
+    let kill: () -> Void
 
     var body: some View {
         HStack(spacing: 8) {
@@ -149,6 +152,7 @@ private struct ProcessRow: View {
             Spacer(minLength: 8)
             UsageColumn(bytes: process.residentBytes, cpuRate: cpuRate)
             ToggleButton(isStopped: process.isStopped, action: toggle)
+            KillButton(action: kill)
         }
         .font(.caption)
         .padding(.vertical, 3)
@@ -196,6 +200,27 @@ private struct ToggleButton: View {
         }
         .buttonStyle(.borderless)
         .help(isStopped ? "Resume" : "Pause")
+    }
+}
+
+private struct KillButton: View {
+    let action: () -> Void
+    @State private var armed = false
+
+    var body: some View {
+        Button {
+            if armed { action() }
+            armed.toggle()
+        } label: {
+            Image(systemName: armed ? "xmark.circle.fill" : "xmark.circle")
+                .foregroundStyle(armed ? Color.red : Color.secondary)
+                .frame(width: 18, height: 18)
+        }
+        .buttonStyle(.borderless)
+        .help(armed ? "Click again to kill" : "Kill")
+        // Killing loses unsaved work and sits next to the pause button, so it takes two clicks;
+        // moving the pointer away disarms it.
+        .onHover { if !$0 { armed = false } }
     }
 }
 

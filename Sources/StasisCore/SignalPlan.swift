@@ -1,15 +1,18 @@
 import Foundation
 
-/// Which signal to send to which processes for a toggle request.
+/// Which signal to send to which processes for a pause, resume or kill request.
 public struct SignalPlan: Sendable, Hashable {
     public enum Signal: Sendable, Hashable {
         case stop
         case `continue`
+        case kill
 
         public var number: Int32 {
             switch self {
             case .stop: SIGSTOP
             case .continue: SIGCONT
+            // Not SIGTERM: a stopped process only acts on it once resumed.
+            case .kill: SIGKILL
             }
         }
     }
@@ -30,6 +33,15 @@ public struct SignalPlan: Sendable, Hashable {
 
     public static func toggle(_ process: ProcessRecord) -> SignalPlan {
         SignalPlan(signal: process.isStopped ? .continue : .stop, pids: [process.pid])
+    }
+
+    /// Kills the app with all its processes, whatever their pause state.
+    public static func kill(_ group: AppGroup) -> SignalPlan {
+        SignalPlan(signal: .kill, pids: group.processes.map(\.pid))
+    }
+
+    public static func kill(_ process: ProcessRecord) -> SignalPlan {
+        SignalPlan(signal: .kill, pids: [process.pid])
     }
 
     /// Stops every process of every app that is not already fully paused.
