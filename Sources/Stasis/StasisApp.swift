@@ -18,12 +18,13 @@ struct StasisApp: App {
 @MainActor
 final class StatusItemController: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     private let monitor = ProcessMonitor()
+    private let updates = UpdateChecker()
     private var statusItem: NSStatusItem?
     private let popover = NSPopover()
     private var outsideClickMonitor: Any?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        let host = NSHostingController(rootView: ContentView(monitor: monitor))
+        let host = NSHostingController(rootView: ContentView(monitor: monitor, updates: updates))
         host.sizingOptions = [.preferredContentSize]
         popover.contentViewController = host
         popover.behavior = .transient

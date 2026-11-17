@@ -42,7 +42,7 @@ Requires macOS 14+. `make test` and `make build` need only the Xcode command lin
 icon is compiled from an Icon Composer document with `actool`.
 
 ```
-make test      # unit tests for the grouping / state / signal / matching / sorting / CPU logic
+make test      # unit tests for the grouping / state / signal / matching / sorting / CPU / version logic
 make run       # build release, assemble build/Stasis.app, launch it
 make install   # same, then copy to /Applications, symlink the CLI, launch
 make raycast   # npm install + register the Raycast extension (see below)
@@ -89,6 +89,8 @@ extension's source.
 - Processes of other users cannot be signalled without root; the footer shows the error.
 - Sampling: every 2 s while the popover is open, every 30 s otherwise (keeps the menu bar icon
   in sync when the system pauses something).
+- At launch and once a day the app asks the GitHub API for the latest release and, if it is
+  newer, links to it at the bottom of the popover. Nothing else leaves the machine.
 
 ## Releasing
 

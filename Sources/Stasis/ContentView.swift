@@ -6,6 +6,7 @@ import os
 
 struct ContentView: View {
     let monitor: ProcessMonitor
+    let updates: UpdateChecker
     @AppStorage("sortOrder") private var sortOrder = AppSortOrder.name
 
     var body: some View {
@@ -53,6 +54,10 @@ struct ContentView: View {
                 Spacer()
                 Button("Quit") { NSApp.terminate(nil) }
                     .keyboardShortcut("q")
+            }
+            if let version = updates.availableVersion {
+                Link("Stasis \(version) is available", destination: UpdateChecker.releasePage)
+                    .font(.caption)
             }
         }
         .padding(10)
