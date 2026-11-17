@@ -3,7 +3,9 @@
 Menu bar utility to pause (`SIGSTOP`) and resume (`SIGCONT`) running macOS apps, and to
 recover apps that macOS itself paused under memory pressure.
 
-<img src="docs/screenshot.png" width="410" alt="The Stasis popover listing running and paused apps">
+<p align="center">
+  <img src="docs/screenshot.png" width="410" alt="The Stasis popover listing running and paused apps">
+</p>
 
 Each app row shows its memory footprint and CPU rate; expand a row to see and toggle the
 individual processes (browser renderers, JVMs, helpers). Pause state is read from the kernel
@@ -22,7 +24,7 @@ Requires macOS 14+. `make test` and `make build` need only the Xcode command lin
 from an Icon Composer document with `actool`.
 
 ```
-make test      # unit tests for the grouping / state / signal / matching logic
+make test      # unit tests for the grouping / state / signal / matching / sorting / CPU logic
 make run       # build release, assemble build/Stasis.app, launch it
 make install   # same, then copy to /Applications, symlink the CLI, launch
 make raycast   # npm install + register the Raycast extension (see below)

@@ -8,7 +8,7 @@ public enum Workspace {
     /// run the resume command.
     public static let systemExclusions: Set<String> = ["com.apple.finder", "com.apple.dock", "com.raycast.macos"]
 
-    /// Posted by the CLI after it changed a pause state so the menu bar icon updates at once
+    /// Posted by the CLI after it paused, resumed or killed so the menu bar icon updates at once
     /// instead of on its next background sample.
     public static let didChangeNotification = Notification.Name("dev.marstaj.Stasis.didChange")
 

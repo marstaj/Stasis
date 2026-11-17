@@ -4,7 +4,7 @@ import Foundation
 public enum AppSortOrder: String, CaseIterable, Sendable {
     case name, memory, cpu
 
-    /// Memory and CPU sort largest first; ties, and apps without a CPU rate yet, fall back to name.
+    /// Memory and CPU sort largest first, apps without a CPU rate yet last; ties fall back to name.
     public func sorted(_ groups: [AppGroup], cpuRate: (AppGroup) -> Double?) -> [AppGroup] {
         func byName(_ lhs: AppGroup, _ rhs: AppGroup) -> Bool {
             let order = lhs.app.name.localizedCaseInsensitiveCompare(rhs.app.name)

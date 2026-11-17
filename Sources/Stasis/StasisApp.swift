@@ -35,7 +35,7 @@ final class StatusItemController: NSObject, NSApplicationDelegate, NSPopoverDele
         statusItem = item
         observeIcon()
 
-        // The CLI posts this after pausing or resuming; without it the icon lags up to 30 s.
+        // The CLI posts this after pausing, resuming or killing; without it the icon lags up to 30 s.
         DistributedNotificationCenter.default().addObserver(
             forName: Workspace.didChangeNotification, object: nil, queue: .main
         ) { [monitor] _ in
