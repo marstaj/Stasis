@@ -30,7 +30,7 @@ struct ContentView: View {
             Divider()
             footer
         }
-        .frame(width: 400)
+        .frame(width: 385)
         .onAppear { monitor.setPopoverVisible(true) }
         .onDisappear { monitor.setPopoverVisible(false) }
     }
@@ -58,23 +58,13 @@ private struct AppRow: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // Two click zones: left of the icon expands, the icon and everything right of it toggles.
             HStack(spacing: 0) {
-                // Not animated: an animated size change leaves the menu bar panel at its
-                // expanded height after collapsing.
-                Button {
-                    expanded.toggle()
-                } label: {
-                    Image(systemName: "chevron.right")
-                        .font(.caption.weight(.semibold))
-                        .rotationEffect(.degrees(expanded ? 90 : 0))
-                        .frame(width: 14)
-                        .padding(.horizontal, 8)
-                        .frame(maxHeight: .infinity)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(.secondary)
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .rotationEffect(.degrees(expanded ? 90 : 0))
+                    .frame(width: 14)
+                    .padding(.horizontal, 8)
+                    .foregroundStyle(.secondary)
 
                 HStack(spacing: 8) {
                     if let icon = monitor.icons[group.app.pid] {
@@ -91,11 +81,13 @@ private struct AppRow: View {
                 }
                 .padding(.vertical, 6)
                 .padding(.trailing, 8)
-                .contentShape(Rectangle())
-                .onTapGesture { monitor.toggle(group) }
             }
             .fixedSize(horizontal: false, vertical: true)
             .background(rowBackground, in: RoundedRectangle(cornerRadius: 6))
+            .contentShape(Rectangle())
+            // The buttons take their own clicks. Not animated: an animated size change leaves the
+            // menu bar panel at its expanded height after collapsing.
+            .onTapGesture { expanded.toggle() }
 
             if expanded {
                 VStack(spacing: 2) {
@@ -130,12 +122,17 @@ private struct StateLabel: View {
         case .running:
             Text("Running").font(.caption).foregroundStyle(.secondary)
         case .partiallyPaused:
-            Label("\(group.stoppedCount) of \(group.processes.count) processes paused", systemImage: "pause")
-                .font(.caption).foregroundStyle(.yellow)
+            pausedLabel("\(group.stoppedCount) of \(group.processes.count) paused")
         case .paused:
-            Label("Paused", systemImage: "pause.fill")
-                .font(.caption).foregroundStyle(.orange)
+            pausedLabel("Paused")
         }
+    }
+
+    /// Untinted: orange or yellow is unreadable on the row's background of the same colour.
+    private func pausedLabel(_ text: String) -> some View {
+        Label(text, systemImage: "pause.fill")
+            .font(.caption.weight(.medium))
+            .foregroundStyle(.primary)
     }
 }
 
@@ -151,8 +148,8 @@ private struct ProcessRow: View {
             Text(String(process.pid)).foregroundStyle(.tertiary)
             Spacer(minLength: 8)
             UsageColumn(bytes: process.residentBytes, cpuRate: cpuRate)
-            ToggleButton(isStopped: process.isStopped, action: toggle)
-            KillButton(action: kill)
+            ToggleButton(isStopped: process.isStopped, compact: true, action: toggle)
+            KillButton(compact: true, action: kill)
         }
         .font(.caption)
         .padding(.vertical, 3)
@@ -161,8 +158,6 @@ private struct ProcessRow: View {
             process.isStopped ? Color.orange.opacity(0.2) : .clear,
             in: RoundedRectangle(cornerRadius: 4)
         )
-        .contentShape(Rectangle())
-        .onTapGesture(perform: toggle)
     }
 }
 
@@ -185,25 +180,41 @@ private struct UsageColumn: View {
                 .foregroundStyle(.secondary)
                 .monospacedDigit()
         }
-        .frame(minWidth: 72, alignment: .trailing)
+        .frame(minWidth: 66, alignment: .trailing)
+    }
+}
+
+/// The whole filled rectangle is the click target.
+private struct RowButtonStyle: ButtonStyle {
+    let compact: Bool
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .frame(width: compact ? 28 : 34, height: compact ? 20 : 28)
+            .background(
+                Color.primary.opacity(configuration.isPressed ? 0.22 : 0.1),
+                in: RoundedRectangle(cornerRadius: compact ? 4 : 6)
+            )
+            .contentShape(Rectangle())
     }
 }
 
 private struct ToggleButton: View {
     let isStopped: Bool
+    var compact = false
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
             Image(systemName: isStopped ? "play.fill" : "pause.fill")
-                .frame(width: 18, height: 18)
         }
-        .buttonStyle(.borderless)
+        .buttonStyle(RowButtonStyle(compact: compact))
         .help(isStopped ? "Resume" : "Pause")
     }
 }
 
 private struct KillButton: View {
+    var compact = false
     let action: () -> Void
     @State private var armed = false
 
@@ -214,9 +225,8 @@ private struct KillButton: View {
         } label: {
             Image(systemName: armed ? "xmark.circle.fill" : "xmark.circle")
                 .foregroundStyle(armed ? Color.red : Color.secondary)
-                .frame(width: 18, height: 18)
         }
-        .buttonStyle(.borderless)
+        .buttonStyle(RowButtonStyle(compact: compact))
         .help(armed ? "Click again to kill" : "Kill")
         // Killing loses unsaved work and sits next to the pause button, so it takes two clicks;
         // moving the pointer away disarms it.
