@@ -68,3 +68,8 @@ extension's source.
 - Processes of other users cannot be signalled without root; the footer shows the error.
 - Sampling: every 2 s while the popover is open, every 30 s otherwise (keeps the menu bar icon
   in sync when the system pauses something).
+
+## License
+
+[Apache-2.0](LICENSE). The Raycast extension in `raycast/` is [MIT](raycast/LICENSE), the only
+license Raycast accepts for extensions.
