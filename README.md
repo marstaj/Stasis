@@ -3,6 +3,8 @@
 Menu bar utility to pause (`SIGSTOP`) and resume (`SIGCONT`) running macOS apps, and to
 recover apps that macOS itself paused under memory pressure.
 
+<img src="docs/screenshot.png" width="410" alt="The Stasis popover listing running and paused apps">
+
 Each app row shows its memory footprint and CPU rate; expand a row to see and toggle the
 individual processes (browser renderers, JVMs, helpers). Pause state is read from the kernel
 process table, so system-initiated pauses show up without the tool having been involved.
