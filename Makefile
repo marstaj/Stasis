@@ -1,19 +1,27 @@
 APP     := Stasis
 BUNDLE  := build/$(APP).app
-BINARY  := .build/release/$(APP)
-CLI     := .build/release/stasis-cli
+# Set by `make release`. SwiftPM puts a universal build in a directory that differs between
+# toolchains, so the products path is asked for instead of hardcoded.
+ARCHS   :=
+PRODUCTS = $(shell swift build -c release $(ARCHS) --show-bin-path)
+BINARY   = $(PRODUCTS)/$(APP)
+CLI      = $(PRODUCTS)/stasis-cli
 ICONDIR := build/icon
+ZIP     := build/$(APP).zip
+# Stamped into the bundle so the update check knows which release a build came from. Defaults
+# to the latest release tag; empty outside a tagged checkout, which keeps Info.plist's version.
+VERSION := $(shell git describe --tags --abbrev=0 --match 'v[0-9]*' 2>/dev/null | sed 's/^v//')
 INSTALL := /Applications
 # Where the `stasis` command is symlinked; override with `make install BIN=~/.local/bin`.
 BIN     := /opt/homebrew/bin
 
-.PHONY: test build bundle run install raycast clean
+.PHONY: test build bundle run install release raycast clean
 
 test:
 	swift test
 
 build:
-	swift build -c release
+	swift build -c release $(ARCHS)
 
 # Compiles the Icon Composer document into Assets.car (macOS 26+ icon) plus a legacy .icns.
 # A plain .icns alone gets drawn shrunken inside a system tile on macOS 26+.
@@ -34,6 +42,10 @@ bundle: build $(ICONDIR)/Assets.car
 	cp $(CLI) $(BUNDLE)/Contents/Helpers/stasis
 	cp $(ICONDIR)/Assets.car $(ICONDIR)/AppIcon.icns $(BUNDLE)/Contents/Resources/
 	cp Info.plist $(BUNDLE)/Contents/
+ifneq ($(VERSION),)
+	plutil -replace CFBundleShortVersionString -string $(VERSION) $(BUNDLE)/Contents/Info.plist
+	plutil -replace CFBundleVersion -string $(VERSION) $(BUNDLE)/Contents/Info.plist
+endif
 	printf 'APPL????' > $(BUNDLE)/Contents/PkgInfo
 	codesign --force --sign - $(BUNDLE)/Contents/Helpers/stasis
 	codesign --force --sign - $(BUNDLE)
@@ -47,6 +59,13 @@ install: bundle
 	cp -R $(BUNDLE) $(INSTALL)/
 	ln -sfn $(INSTALL)/$(APP).app/Contents/Helpers/stasis $(BIN)/stasis
 	open $(INSTALL)/$(APP).app
+
+# Universal build zipped for a GitHub release. ditto, unlike zip, keeps the symlinks and
+# extended attributes the signature depends on.
+release:
+	$(MAKE) bundle ARCHS="--arch arm64 --arch x86_64"
+	rm -f $(ZIP)
+	ditto -c -k --keepParent $(BUNDLE) $(ZIP)
 
 # Installs the Raycast extension's dependencies and registers it with Raycast via its dev
 # server; stop the server with Ctrl-C once the commands show up, they stay registered.

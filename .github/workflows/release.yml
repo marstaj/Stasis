@@ -1,0 +1,21 @@
+name: Release
+
+on:
+  push:
+    # Release versions only: the app's update check cannot parse a pre-release tag.
+    tags: ["v[0-9]+.[0-9]+.[0-9]+"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    # Needs Xcode 26+ for the Icon Composer icon; this image defaults to it.
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v7
+      - run: make test
+      - run: make release VERSION="${GITHUB_REF_NAME#v}"
+      - run: gh release create "$GITHUB_REF_NAME" build/Stasis.zip --verify-tag --generate-notes
+        env:
+          GH_TOKEN: ${{ github.token }}

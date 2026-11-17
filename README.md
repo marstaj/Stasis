@@ -17,17 +17,36 @@ anything gentler). It takes two clicks: the first arms it, moving the pointer aw
 
 Pausing frees CPU, not RAM. A paused app keeps its memory until the compressor or swap takes it.
 
+## Install
+
+Download `Stasis.zip` from the [latest release](https://github.com/marstaj/Stasis/releases/latest),
+unzip it and move `Stasis.app` to `/Applications`. It runs on Apple silicon and Intel, macOS 14+.
+
+The app is not notarized, so macOS refuses the first launch. Either open System Settings >
+Privacy & Security and click Open Anyway, or clear the quarantine flag:
+
+```
+xattr -dr com.apple.quarantine /Applications/Stasis.app
+```
+
+The `stasis` command is inside the bundle; to put it on your path:
+
+```
+ln -s /Applications/Stasis.app/Contents/Helpers/stasis /opt/homebrew/bin/stasis
+```
+
 ## Build and run
 
 Requires macOS 14+. `make test` and `make build` need only the Xcode command line tools
-(Swift 6); `make run` and `make install` need full Xcode 26+ because the app icon is compiled
-from an Icon Composer document with `actool`.
+(Swift 6); `make run`, `make install` and `make release` need full Xcode 26+ because the app
+icon is compiled from an Icon Composer document with `actool`.
 
 ```
 make test      # unit tests for the grouping / state / signal / matching / sorting / CPU logic
 make run       # build release, assemble build/Stasis.app, launch it
 make install   # same, then copy to /Applications, symlink the CLI, launch
 make raycast   # npm install + register the Raycast extension (see below)
+make release   # universal build zipped to build/Stasis.zip (see Releasing)
 ```
 
 The `.app` wrapper is assembled by the Makefile from `Info.plist` and the compiled
@@ -70,6 +89,29 @@ extension's source.
 - Processes of other users cannot be signalled without root; the footer shows the error.
 - Sampling: every 2 s while the popover is open, every 30 s otherwise (keeps the menu bar icon
   in sync when the system pauses something).
+
+## Releasing
+
+Pushing a three-part tag like `v1.2.3` runs `.github/workflows/release.yml`: it runs the tests,
+builds a universal app stamped with that version and attaches `Stasis.zip` to a new GitHub
+release. Local builds are stamped with the latest tag in the checkout.
+
+```
+git tag v1.2.3 && git push origin v1.2.3
+```
+
+The build is ad-hoc signed. To notarize it instead, so it opens without the Gatekeeper step:
+
+1. Join the Apple Developer Program and create a Developer ID Application certificate.
+2. Export the certificate as a `.p12` and add it, base64 encoded, with its password as
+   repository secrets. Add an App Store Connect API key (key, key id, issuer id) the same way.
+3. In the workflow, import the certificate into a temporary keychain before `make release`.
+4. In the Makefile, replace `--sign -` with `--sign "Developer ID Application: <name> (<team>)"
+   --options runtime --timestamp` in both `codesign` calls.
+5. After `make release`, run `xcrun notarytool submit build/Stasis.zip --wait` with the API key,
+   then `xcrun stapler staple build/Stasis.app` and zip the app again with the `ditto` command
+   from the Makefile, so the release carries the stapled ticket.
+6. Drop the Gatekeeper paragraph from Install.
 
 ## License
 
