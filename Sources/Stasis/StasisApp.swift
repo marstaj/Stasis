@@ -50,6 +50,8 @@ final class StatusItemController: NSObject, NSApplicationDelegate, NSPopoverDele
         } else {
             NSApp.activate()
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+            // Otherwise the first click only makes the popover key and the row's tap gesture never sees it.
+            popover.contentViewController?.view.window?.makeKey()
             // Transient closing only sees clicks inside this app; clicks in other apps need a global monitor.
             outsideClickMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { _ in
                 Task { @MainActor in self.popover.performClose(nil) }
