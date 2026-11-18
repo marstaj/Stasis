@@ -78,6 +78,8 @@ private struct AppRow: View {
     let group: AppGroup
     let monitor: ProcessMonitor
     @State private var expanded = false
+    /// Measured height of the name and state lines; the icon is drawn as a square of this side.
+    @State private var labelHeight: CGFloat = 30
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -91,12 +93,13 @@ private struct AppRow: View {
 
                 HStack(spacing: 8) {
                     if let icon = monitor.icons[group.app.pid] {
-                        Image(nsImage: icon).resizable().frame(width: 24, height: 24)
+                        Image(nsImage: icon).resizable().frame(width: labelHeight, height: labelHeight)
                     }
                     VStack(alignment: .leading, spacing: 1) {
                         Text(group.app.name).fontWeight(.medium).lineLimit(1)
                         StateLabel(group: group)
                     }
+                    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { labelHeight = $0 }
                     Spacer(minLength: 8)
                     UsageColumn(bytes: group.totalResidentBytes, cpuRate: monitor.cpuRate(of: group))
                     ToggleButton(isStopped: group.state != .running) { monitor.toggle(group) }
