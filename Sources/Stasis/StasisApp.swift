@@ -32,7 +32,8 @@ final class StatusItemController: NSObject, NSApplicationDelegate, NSPopoverDele
 
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         item.button?.target = self
-        item.button?.action = #selector(togglePopover)
+        item.button?.action = #selector(statusItemClicked)
+        item.button?.sendAction(on: [.leftMouseUp, .rightMouseUp])
         statusItem = item
         observeIcon()
 
@@ -44,7 +45,51 @@ final class StatusItemController: NSObject, NSApplicationDelegate, NSPopoverDele
         }
     }
 
-    @objc private func togglePopover() {
+    @objc private func statusItemClicked() {
+        let event = NSApp.currentEvent
+        if event?.type == .rightMouseUp || event?.modifierFlags.contains(.control) == true {
+            showMenu()
+        } else {
+            togglePopover()
+        }
+    }
+
+    private func showMenu() {
+        popover.performClose(nil)
+        monitor.refresh()
+
+        let menu = NSMenu()
+        menu.autoenablesItems = false
+        if let front = monitor.frontApp {
+            let pauseOthers = menu.addItem(
+                withTitle: "Pause All Except \(front.name)", action: #selector(pauseAllExceptFrontApp), keyEquivalent: ""
+            )
+            pauseOthers.target = self
+            pauseOthers.isEnabled = !monitor.pauseAllTargets(sparingFrontApp: true).isEmpty
+        }
+        let pause = menu.addItem(withTitle: "Pause All", action: #selector(pauseAll), keyEquivalent: "")
+        pause.target = self
+        pause.isEnabled = !monitor.pauseAllTargets(sparingFrontApp: false).isEmpty
+        let resume = menu.addItem(withTitle: "Resume All", action: #selector(resumeAll), keyEquivalent: "")
+        resume.target = self
+        resume.isEnabled = monitor.anyPaused
+        menu.addItem(.separator())
+        menu.addItem(withTitle: "Quit Stasis", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+
+        // A permanently assigned menu would take over left-click too; attached only for this
+        // click, the status item still positions and highlights it. Tracking blocks until it closes.
+        statusItem?.menu = menu
+        statusItem?.button?.performClick(nil)
+        statusItem?.menu = nil
+    }
+
+    @objc private func pauseAllExceptFrontApp() { monitor.pauseAll(sparingFrontApp: true) }
+
+    @objc private func pauseAll() { monitor.pauseAll(sparingFrontApp: false) }
+
+    @objc private func resumeAll() { monitor.resumeAll() }
+
+    private func togglePopover() {
         guard let button = statusItem?.button else { return }
         if popover.isShown {
             popover.performClose(nil)

@@ -84,9 +84,33 @@ final class ProcessMonitor {
         send(SignalPlan.kill(process), target: "\(process.name) (\(process.pid))")
     }
 
+    /// The app the user is in, which "Pause All Except" keeps running. Nil when that app is not
+    /// listed (Finder); there is then nothing to spare.
+    var frontApp: RunningApp? {
+        let pid = Workspace.foregroundApplicationPid(excluding: excludedBundleIdentifiers)
+        return groups.first { $0.app.pid == pid }?.app
+    }
+
+    func pauseAllTargets(sparingFrontApp: Bool) -> [AppGroup] {
+        SignalPlan.pauseAllTargets(in: groups, sparing: sparingFrontApp ? frontApp?.pid : nil)
+    }
+
+    func pauseAll(sparingFrontApp: Bool) {
+        // The background sample can be 30 s old.
+        refresh()
+        send(SignalPlan.stopAll(pauseAllTargets(sparingFrontApp: sparingFrontApp)), target: "all apps")
+    }
+
+    func resumeAll() {
+        refresh()
+        send(SignalPlan.continueAll(groups), target: "all apps")
+    }
+
     private func send(_ plan: SignalPlan, target: String) {
         lastError = nil
-        for process in plan.targets {
+        // Started from a terminal (`swift run`), this process is a descendant of that terminal
+        // and in its plan; stopping ourselves would leave the rest unsignalled and no way back.
+        for process in plan.targets where process.pid != getpid() {
             guard let code = SystemProcessSource.send(plan.signal, to: process) else { continue }
             // Killing a parent can take its children down before their turn comes.
             if plan.signal == .kill && code == ESRCH { continue }

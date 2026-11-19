@@ -42,8 +42,8 @@ export default function Command() {
     if (confirmed) await run("kill", app);
   }
 
-  async function bulk(command: "pause-all" | "resume-all") {
-    await runBulk(command);
+  async function bulk(command: "pause-all" | "resume-all", ...flags: string[]) {
+    await runBulk(command, ...flags);
     revalidate();
   }
 
@@ -77,7 +77,8 @@ export default function Command() {
                   />
                 </ActionPanel.Section>
                 <ActionPanel.Section>
-                  <Action title="Pause All Apps" icon={Icon.Pause} shortcut={{ modifiers: ["cmd", "shift"], key: "p" }} onAction={() => bulk("pause-all")} />
+                  <Action title="Pause All Except Front App" icon={Icon.Pause} shortcut={{ modifiers: ["cmd", "shift"], key: "p" }} onAction={() => bulk("pause-all")} />
+                  <Action title="Pause All Apps" icon={Icon.Pause} shortcut={{ modifiers: ["cmd", "opt"], key: "p" }} onAction={() => bulk("pause-all", "--include-frontmost")} />
                   <Action title="Resume All Apps" icon={Icon.Play} shortcut={{ modifiers: ["cmd", "shift"], key: "r" }} onAction={() => bulk("resume-all")} />
                 </ActionPanel.Section>
               </ActionPanel>

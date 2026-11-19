@@ -17,6 +17,8 @@ declare namespace Preferences {
   export type Apps = ExtensionPreferences & {}
   /** Preferences accessible in the `pause-all` command */
   export type PauseAll = ExtensionPreferences & {}
+  /** Preferences accessible in the `pause-all-including-front` command */
+  export type PauseAllIncludingFront = ExtensionPreferences & {}
   /** Preferences accessible in the `resume-all` command */
   export type ResumeAll = ExtensionPreferences & {}
 }
@@ -26,6 +28,8 @@ declare namespace Arguments {
   export type Apps = {}
   /** Arguments passed to the `pause-all` command */
   export type PauseAll = {}
+  /** Arguments passed to the `pause-all-including-front` command */
+  export type PauseAllIncludingFront = {}
   /** Arguments passed to the `resume-all` command */
   export type ResumeAll = {}
 }

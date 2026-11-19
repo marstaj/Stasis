@@ -96,6 +96,22 @@ private let all = [brave, studio, slack, smartGit]
         #expect(plan.pids == [100, 900, 901])
     }
 
+    @Test func pauseAllTargetsSpareTheForegroundAppAndSkipFullyPausedOnes() {
+        let front = group(1, "Zed", bundleId: "dev.zed.Zed")
+        let running = group(2, "Brave", bundleId: "com.brave.Browser")
+        let paused = group(5, "Preview", bundleId: "com.apple.Preview", stopped: [true])
+        let partial = group(7, "Chrome", bundleId: "com.google.Chrome", stopped: [false, true])
+        let targets = SignalPlan.pauseAllTargets(in: [front, running, paused, partial], sparing: 1)
+        #expect(targets.map(\.app.pid) == [2, 7])
+    }
+
+    @Test func pauseAllTargetsSpareNothingWithoutAForegroundApp() {
+        let groups = [group(1, "Zed", bundleId: "dev.zed.Zed"), group(2, "Brave", bundleId: "com.brave.Browser")]
+        #expect(SignalPlan.pauseAllTargets(in: groups, sparing: nil).map(\.app.pid) == [1, 2])
+        // A foreground app that is not listed (Finder) spares nothing either.
+        #expect(SignalPlan.pauseAllTargets(in: groups, sparing: 99).map(\.app.pid) == [1, 2])
+    }
+
     @Test func continueAllSkipsRunningApps() {
         let paused = group(800, "Paused", bundleId: "x.paused", stopped: [true, true])
         let partial = group(900, "Partial", bundleId: "x.partial", stopped: [false, true])

@@ -16,10 +16,26 @@ struct ContentView: View {
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, minHeight: 60)
             } else {
-                Picker("Sort by", selection: $sortOrder) {
-                    ForEach(AppSortOrder.allCases, id: \.self) { Text($0.title).tag($0) }
+                VStack(spacing: 8) {
+                    Picker("Sort by", selection: $sortOrder) {
+                        ForEach(AppSortOrder.allCases, id: \.self) { Text($0.title).tag($0) }
+                    }
+                    .pickerStyle(.segmented)
+                    HStack {
+                        if let front = monitor.frontApp {
+                            Button("Pause All Except \(front.name)") { monitor.pauseAll(sparingFrontApp: true) }
+                                .disabled(monitor.pauseAllTargets(sparingFrontApp: true).isEmpty)
+                                .lineLimit(1)
+                        }
+                        Button("Pause All") { monitor.pauseAll(sparingFrontApp: false) }
+                            .disabled(monitor.pauseAllTargets(sparingFrontApp: false).isEmpty)
+                            .fixedSize()
+                        Spacer()
+                        Button("Resume All") { monitor.resumeAll() }
+                            .disabled(!monitor.anyPaused)
+                            .fixedSize()
+                    }
                 }
-                .pickerStyle(.segmented)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 8)
                 Divider()

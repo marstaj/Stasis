@@ -12,6 +12,10 @@ individual processes (browser renderers, JVMs, helpers). Pause state is read fro
 process table, so system-initiated pauses show up without the tool having been involved.
 The control at the top sorts the list by name, memory or CPU; the choice is remembered.
 
+Below it, Pause All Except <app> pauses every app but the one in front, which it names; Pause
+All pauses that one too; Resume All resumes everything paused. All three are also in the menu
+bar icon's right-click menu, together with Quit.
+
 The ✕ at the end of a row kills the app or process with `SIGKILL` (paused processes ignore
 anything gentler). It takes two clicks: the first arms it, moving the pointer away disarms it.
 
@@ -87,9 +91,9 @@ Exit status: 1 usage, 2 no or ambiguous app (candidates on stderr), 3 some signa
 
 ## Raycast
 
-`raycast/` is a Raycast extension with three commands: Pause / Resume Apps (every app with
+`raycast/` is a Raycast extension with four commands: Pause / Resume Apps (every app with
 memory and state, Enter pauses a running app or resumes a paused one, the row stays put), Pause
-All Apps and Resume All Apps, which are also actions inside the first. The list also has a Kill
+All Except Front App, Pause All Apps and Resume All Apps, which are also actions inside the first. The list also has a Kill
 action (⌃X) that asks before it kills. It shells out to the CLI at its
 bundle path, so Stasis must be installed in `/Applications`. Needs Node; `make raycast` installs
 the npm dependencies and starts Raycast's dev server, which registers the extension. Stop the

@@ -48,6 +48,12 @@ public struct SignalPlan: Sendable, Hashable {
         SignalPlan(signal: .kill, targets: [process])
     }
 
+    /// The apps a "pause all" stops: every app that is not already fully paused, except the
+    /// spared one (the app the user is in).
+    public static func pauseAllTargets(in groups: [AppGroup], sparing spared: pid_t?) -> [AppGroup] {
+        groups.filter { $0.app.pid != spared && $0.state != .paused }
+    }
+
     /// Stops every process of every app that is not already fully paused.
     public static func stopAll(_ groups: [AppGroup]) -> SignalPlan {
         SignalPlan(signal: .stop, targets: groups.filter { $0.state != .paused }.flatMap(\.processes))

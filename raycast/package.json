@@ -15,8 +15,14 @@
     },
     {
       "name": "pause-all",
-      "title": "Pause All Apps",
+      "title": "Pause All Except Front App",
       "description": "Pause every app except the one in front.",
+      "mode": "no-view"
+    },
+    {
+      "name": "pause-all-including-front",
+      "title": "Pause All Apps",
+      "description": "Pause every app, including the one in front.",
       "mode": "no-view"
     },
     {

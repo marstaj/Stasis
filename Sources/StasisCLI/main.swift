@@ -126,7 +126,7 @@ case "pause-all":
     let (flags, _) = parse(rest, allowedFlags: ["--include-frontmost"], positionals: 0)
     let all = snapshot(includeUsage: false)
     let spared = flags.contains("--include-frontmost") ? nil : Workspace.foregroundApplicationPid()
-    let targets = all.filter { $0.app.pid != spared && $0.state != .paused }
+    let targets = SignalPlan.pauseAllTargets(in: all, sparing: spared)
     send(SignalPlan.stopAll(targets))
     var message = "Paused \(targets.count) apps"
     if let spared, let name = all.first(where: { $0.app.pid == spared })?.app.name {
