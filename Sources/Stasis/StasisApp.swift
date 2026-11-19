@@ -1,6 +1,7 @@
 import AppKit
 import StasisCore
 import SwiftUI
+import os
 
 @main
 struct StasisApp: App {
@@ -121,7 +122,22 @@ final class StatusItemController: NSObject, NSApplicationDelegate, NSPopoverDele
     }
 
     private func updateIcon() {
-        let name = monitor.anyPaused ? "pause.circle.fill" : "pause.circle"
-        statusItem?.button?.image = NSImage(systemSymbolName: name, accessibilityDescription: "Stasis")
+        statusItem?.button?.image = monitor.anyPaused ? pausedIcon : idleIcon
+    }
+
+    private lazy var idleIcon = Self.menuBarIcon("MenuBarIdle", fallbackSymbol: "pause.circle")
+    private lazy var pausedIcon = Self.menuBarIcon("MenuBarPaused", fallbackSymbol: "pause.circle.fill")
+
+    /// The SVGs are copied into the bundle by the Makefile, so `swift run` has none and gets the symbol.
+    private static func menuBarIcon(_ name: String, fallbackSymbol: String) -> NSImage? {
+        guard let url = Bundle.main.url(forResource: name, withExtension: "svg"), let image = NSImage(contentsOf: url) else {
+            Logger(subsystem: "dev.marstaj.Stasis", category: "status-item")
+                .error("Menu bar icon \(name).svg is missing or unreadable; using \(fallbackSymbol)")
+            return NSImage(systemSymbolName: fallbackSymbol, accessibilityDescription: "Stasis")
+        }
+        // Tinted by macOS for light, dark and highlighted menu bars.
+        image.isTemplate = true
+        image.accessibilityDescription = "Stasis"
+        return image
     }
 }

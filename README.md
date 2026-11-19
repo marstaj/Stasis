@@ -67,9 +67,10 @@ make raycast   # npm install + register the Raycast extension (see below)
 make release   # universal build zipped to build/Stasis.zip (see Releasing)
 ```
 
-The `.app` wrapper is assembled by the Makefile from `Info.plist` and the compiled
-`Resources/AppIcon.icon`, then ad-hoc signed; there is no Xcode project. `swift run Stasis`
-works for quick iteration but shows a Dock icon and cannot register launch-at-login, since both
+The `.app` wrapper is assembled by the Makefile from `Info.plist`, the compiled
+`Resources/AppIcon.icon` and the menu bar icons (`Resources/MenuBar*.svg`), then ad-hoc signed;
+there is no Xcode project. `swift run Stasis` works for quick iteration but shows a Dock icon,
+falls back to an SF Symbol in the menu bar and cannot register launch-at-login, since all three
 need the bundle.
 
 ## Command line

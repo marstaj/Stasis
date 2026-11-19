@@ -43,6 +43,7 @@ bundle: build $(ICONDIR)/Assets.car
 	cp $(BINARY) $(BUNDLE)/Contents/MacOS/
 	cp $(CLI) $(BUNDLE)/Contents/Helpers/stasis
 	cp $(ICONDIR)/Assets.car $(ICONDIR)/AppIcon.icns $(BUNDLE)/Contents/Resources/
+	cp Resources/MenuBarIdle.svg Resources/MenuBarPaused.svg $(BUNDLE)/Contents/Resources/
 	cp Info.plist $(BUNDLE)/Contents/
 ifneq ($(VERSION),)
 	plutil -replace CFBundleShortVersionString -string $(VERSION) $(BUNDLE)/Contents/Info.plist

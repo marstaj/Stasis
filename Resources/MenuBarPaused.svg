@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16">
+	<!-- MenuBarIdle.svg's shapes with their strokes outlined, so the bars and triangle are holes: a
+	     template image is tinted by alpha alone, and white-on-black would render as a solid square. -->
+	<path fill="#000000" fill-rule="evenodd" d="M3.2,0.02 H12.8 A3.18,3.18 0 0 1 15.98,3.2 V12.8 A3.18,3.18 0 0 1 12.8,15.98 H3.2 A3.18,3.18 0 0 1 0.02,12.8 V3.2 A3.18,3.18 0 0 1 3.2,0.02 Z M3.9,5.148 A0.65,0.65 0 0 1 5.2,5.148 V10.872 A0.65,0.65 0 0 1 3.9,10.872 Z M5.85,5.148 A0.65,0.65 0 0 1 7.15,5.148 V10.872 A0.65,0.65 0 0 1 5.85,10.872 Z M13.009,8.540 L8.986,11.358 A0.65,0.65 0 0 1 7.963,10.825 V5.191 A0.65,0.65 0 0 1 8.986,4.658 L13.009,7.476 A0.65,0.65 0 0 1 13.009,8.540 Z"/>
+</svg>
