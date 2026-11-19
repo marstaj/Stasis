@@ -30,11 +30,15 @@ built by this repository's release workflow:
 gh attestation verify Stasis.zip --repo marstaj/Stasis
 ```
 
-macOS refuses the first launch for the same reason. Either open System Settings > Privacy &
-Security and click Open Anyway, or clear the quarantine flag:
+macOS refuses the first launch for the same reason. Click Done on that dialog, then open System
+Settings > Privacy & Security, scroll to the bottom and click Open Anyway; the button is only
+there for about an hour after a refused launch.
+
+Or clear the quarantine flag on the zip before unzipping it. If the terminal answers "Operation
+not permitted", macOS is not letting it do that; use Open Anyway instead.
 
 ```
-xattr -dr com.apple.quarantine /Applications/Stasis.app
+xattr -d com.apple.quarantine ~/Downloads/Stasis.zip
 ```
 
 Building it yourself with `make install` (see below) needs neither step.
