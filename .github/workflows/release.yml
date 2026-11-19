@@ -7,6 +7,9 @@ on:
 
 permissions:
   contents: write
+  # For the build provenance attestation: an OIDC token to sign it, and the API to store it.
+  id-token: write
+  attestations: write
 
 jobs:
   release:
@@ -16,6 +19,10 @@ jobs:
       - uses: actions/checkout@v7
       - run: make test
       - run: make release VERSION="${GITHUB_REF_NAME#v}"
+      # Before the release exists, so a published zip always has its attestation.
+      - uses: actions/attest@v4
+        with:
+          subject-path: build/Stasis.zip
       - run: gh release create "$GITHUB_REF_NAME" build/Stasis.zip --verify-tag --generate-notes
         env:
           GH_TOKEN: ${{ github.token }}

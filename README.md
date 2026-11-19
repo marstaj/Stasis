@@ -22,12 +22,22 @@ Pausing frees CPU, not RAM. A paused app keeps its memory until the compressor o
 Download `Stasis.zip` from the [latest release](https://github.com/marstaj/Stasis/releases/latest),
 unzip it and move `Stasis.app` to `/Applications`. It runs on Apple silicon and Intel, macOS 14+.
 
-The app is not notarized, so macOS refuses the first launch. Either open System Settings >
-Privacy & Security and click Open Anyway, or clear the quarantine flag:
+The app is not notarized, so nothing on your Mac checks where the zip came from. To check it
+yourself before opening it, verify with the [GitHub CLI](https://cli.github.com) that it was
+built by this repository's release workflow:
+
+```
+gh attestation verify Stasis.zip --repo marstaj/Stasis
+```
+
+macOS refuses the first launch for the same reason. Either open System Settings > Privacy &
+Security and click Open Anyway, or clear the quarantine flag:
 
 ```
 xattr -dr com.apple.quarantine /Applications/Stasis.app
 ```
+
+Building it yourself with `make install` (see below) needs neither step.
 
 The `stasis` command is inside the bundle; to put it on your path:
 
@@ -95,8 +105,8 @@ extension's source.
 ## Releasing
 
 Pushing a three-part tag like `v1.2.3` runs `.github/workflows/release.yml`: it runs the tests,
-builds a universal app stamped with that version and attaches `Stasis.zip` to a new GitHub
-release. Local builds are stamped with the latest tag in the checkout.
+builds a universal app stamped with that version, attests the zip's build provenance and attaches
+`Stasis.zip` to a new GitHub release. Local builds are stamped with the latest tag in the checkout.
 
 ```
 git tag v1.2.3 && git push origin v1.2.3
@@ -113,7 +123,8 @@ The build is ad-hoc signed. To notarize it instead, so it opens without the Gate
 5. After `make release`, run `xcrun notarytool submit build/Stasis.zip --wait` with the API key,
    then `xcrun stapler staple build/Stasis.app` and zip the app again with the `ditto` command
    from the Makefile, so the release carries the stapled ticket.
-6. Drop the Gatekeeper paragraph from Install.
+6. In Install, drop the Open Anyway / `xattr` paragraph and the "not notarized" wording around
+   the verify step.
 
 ## License
 
