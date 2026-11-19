@@ -55,9 +55,15 @@ struct ContentView: View {
                 Button("Quit") { NSApp.terminate(nil) }
                     .keyboardShortcut("q")
             }
-            if let version = updates.availableVersion {
-                Link("Stasis \(version) is available", destination: UpdateChecker.releasePage)
-                    .font(.caption)
+            if let current = UpdateChecker.currentVersion {
+                HStack {
+                    Text("Version \(current)").foregroundStyle(.secondary)
+                    Spacer()
+                    if let version = updates.availableVersion {
+                        Link("Stasis \(version) is available", destination: UpdateChecker.releasePage)
+                    }
+                }
+                .font(.caption)
             }
         }
         .padding(10)

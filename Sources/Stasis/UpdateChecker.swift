@@ -10,14 +10,16 @@ final class UpdateChecker {
     static let releasePage = URL(string: "https://github.com/marstaj/Stasis/releases/latest")!
     private static let latestRelease = URL(string: "https://api.github.com/repos/marstaj/Stasis/releases/latest")!
 
+    /// Nil when running outside a bundle.
+    static let currentVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String
+
     /// The newest release's version, set only while it is newer than the running app.
     private(set) var availableVersion: String?
 
     private let logger = Logger(subsystem: "dev.marstaj.Stasis", category: "updates")
 
     init() {
-        guard let string = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String,
-              let current = ReleaseVersion(string) else {
+        guard let string = Self.currentVersion, let current = ReleaseVersion(string) else {
             // `swift run` has no bundle, so nothing to compare a release against.
             logger.info("No bundle version; update checks are off")
             return
