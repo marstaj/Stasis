@@ -116,6 +116,10 @@ builds a universal app stamped with that version, attests the zip's build proven
 git tag v1.2.3 && git push origin v1.2.3
 ```
 
+Or let the workflow pick the version: on GitHub open Actions > Release > Run workflow and choose
+which part to raise (patch, minor or major). It releases the head of `main` as the next version
+after the latest release tag; the tag is created with the release, so a failed run leaves none.
+
 The build is ad-hoc signed. To notarize it instead, so it opens without the Gatekeeper step:
 
 1. Join the Apple Developer Program and create a Developer ID Application certificate.

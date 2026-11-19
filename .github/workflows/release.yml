@@ -4,6 +4,17 @@ on:
   push:
     # Release versions only: the app's update check cannot parse a pre-release tag.
     tags: ["v[0-9]+.[0-9]+.[0-9]+"]
+  # Run from the Actions tab: releases the head of the default branch as the next version and
+  # tags it. In this workflow rather than one of its own because a tag created by a workflow
+  # does not start another workflow.
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: Which part of the version to raise
+        type: choice
+        options: [patch, minor, major]
+        default: patch
+        required: true
 
 permissions:
   contents: write
@@ -11,18 +22,58 @@ permissions:
   id-token: write
   attestations: write
 
+# Manual runs wait for each other: two at once would work out the same next version. A pushed tag
+# has a group to itself, because a waiting run is cancelled when another one queues behind it.
+concurrency: ${{ github.event_name == 'push' && github.ref || 'manual-release' }}
+
 jobs:
   release:
     # Needs Xcode 26+ for the Icon Composer icon; this image defaults to it.
     runs-on: macos-26
     steps:
       - uses: actions/checkout@v7
+        with:
+          # All tags, to find the latest version.
+          fetch-depth: 0
+      - name: Work out the version
+        env:
+          BUMP: ${{ inputs.bump }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = push ]; then
+            tag="$GITHUB_REF_NAME"
+            tag_source=--verify-tag
+          else
+            # The release creates the tag as it is published, so a run that fails earlier leaves
+            # no tag for the next run to count from.
+            tag_source="--target=$GITHUB_SHA"
+            if [ "$GITHUB_REF_NAME" != "$DEFAULT_BRANCH" ]; then
+              echo "::error::Run this from $DEFAULT_BRANCH, not $GITHUB_REF_NAME"
+              exit 1
+            fi
+            tags=$(git tag --list --sort=-v:refname)
+            # No release yet counts as 0.0.0.
+            latest=$(grep -E -m 1 '^v[0-9]+\.[0-9]+\.[0-9]+$' <<< "$tags" || true)
+            IFS=. read -r major minor patch <<< "${latest:-v0.0.0}"
+            major=${major#v}
+            case "$BUMP" in
+              major) major=$((major + 1)); minor=0; patch=0 ;;
+              minor) minor=$((minor + 1)); patch=0 ;;
+              patch) patch=$((patch + 1)) ;;
+              *) echo "::error::Unknown bump '$BUMP'"; exit 1 ;;
+            esac
+            tag="v$major.$minor.$patch"
+            echo "::notice::Releasing $tag (was ${latest:-nothing})"
+          fi
+          echo "TAG=$tag" >> "$GITHUB_ENV"
+          echo "VERSION=${tag#v}" >> "$GITHUB_ENV"
+          echo "TAG_SOURCE=$tag_source" >> "$GITHUB_ENV"
       - run: make test
-      - run: make release VERSION="${GITHUB_REF_NAME#v}"
+      - run: make release VERSION="$VERSION"
       # Before the release exists, so a published zip always has its attestation.
       - uses: actions/attest@v4
         with:
           subject-path: build/Stasis.zip
-      - run: gh release create "$GITHUB_REF_NAME" build/Stasis.zip --verify-tag --generate-notes
+      - run: gh release create "$TAG" build/Stasis.zip "$TAG_SOURCE" --generate-notes
         env:
           GH_TOKEN: ${{ github.token }}
