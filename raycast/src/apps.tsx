@@ -21,9 +21,9 @@ export default function Command() {
   async function run(verb: Verb, app: App) {
     const toast = await showToast({ style: Toast.Style.Animated, title: `${progressTitle[verb]} ${app.name}` });
     try {
-      // A bundle id never comes back ambiguous; the name may be a prefix of another app's. With two
-      // instances of one app the CLI takes the first, which may not be this row's.
-      toast.title = await stasis(verb, app.bundleIdentifier ?? app.name);
+      // The pid is the only reference that is this row's app and no other: a name may be a prefix
+      // of another app's, and two instances of one app share a bundle id.
+      toast.title = await stasis(verb, String(app.pid));
       toast.style = Toast.Style.Success;
     } catch (e) {
       toast.style = Toast.Style.Failure;

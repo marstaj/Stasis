@@ -10,11 +10,15 @@ public struct ProcessRecord: Sendable, Hashable {
     public var residentBytes: UInt64
     /// Cumulative user + system CPU time; rates are derived by `CPUSampler`.
     public var cpuTimeNanos: UInt64
+    /// Microseconds since the epoch. With the pid it identifies one process even after the pid
+    /// has been reused.
+    public var startTimeMicros: Int64
 
     public init(
         pid: pid_t, parentPid: pid_t, name: String, executablePath: String,
-        isStopped: Bool, residentBytes: UInt64, cpuTimeNanos: UInt64 = 0
+        isStopped: Bool, residentBytes: UInt64, cpuTimeNanos: UInt64 = 0, startTimeMicros: Int64 = 0
     ) {
+        self.startTimeMicros = startTimeMicros
         self.pid = pid
         self.parentPid = parentPid
         self.name = name
@@ -22,6 +26,14 @@ public struct ProcessRecord: Sendable, Hashable {
         self.isStopped = isStopped
         self.residentBytes = residentBytes
         self.cpuTimeNanos = cpuTimeNanos
+    }
+}
+
+extension String {
+    /// App and process names are chosen by the apps themselves and the CLI prints them, where a
+    /// raw control character could start a terminal escape sequence.
+    var strippingControlCharacters: String {
+        String(String.UnicodeScalarView(unicodeScalars.filter { $0.properties.generalCategory != .control }))
     }
 }
 

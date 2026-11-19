@@ -7,8 +7,8 @@ let usage = """
     usage: stasis <command> [options]
 
       list [--json] [--processes]      running apps with pause state and memory
-      pause <app>                      pause an app (bundle id or name)
-      resume <app>                     resume an app (bundle id or name)
+      pause <app>                      pause an app (pid, bundle id or name)
+      resume <app>                     resume an app (pid, bundle id or name)
       kill <app>                       kill an app with SIGKILL; unsaved work is lost
       pause-all [--include-frontmost]  pause every app except the one in front
       resume-all                       resume every paused or partially paused app
@@ -36,16 +36,16 @@ func send(_ plan: SignalPlan) {
     var failures = 0
     // Run from a terminal that is itself a target, this process is a descendant of it and in the
     // plan; stopping ourselves halfway would leave the rest unsignalled.
-    for pid in plan.pids where pid != getpid() && kill(pid, plan.signal.number) != 0 {
-        let code = errno
+    for process in plan.targets where process.pid != getpid() {
+        guard let code = SystemProcessSource.send(plan.signal, to: process) else { continue }
         // Killing a parent can take its children down before their turn comes.
         if plan.signal == .kill && code == ESRCH { continue }
         failures += 1
-        FileHandle.standardError.write(Data("kill(\(pid)) failed: \(String(cString: strerror(code)))\n".utf8))
+        FileHandle.standardError.write(Data("kill(\(process.pid)) failed: \(String(cString: strerror(code)))\n".utf8))
     }
     Workspace.postDidChange()
     if failures > 0 {
-        fail("\(failures) of \(plan.pids.count) processes could not be signalled", code: ExitCode.signalFailed)
+        fail("\(failures) of \(plan.targets.count) processes could not be signalled", code: ExitCode.signalFailed)
     }
 }
 
@@ -113,7 +113,7 @@ case "pause", "resume":
         print("\(group.app.name) is already \(group.state.label)")
         exit(0)
     }
-    send(SignalPlan(signal: pausing ? .stop : .continue, pids: group.processes.map(\.pid)))
+    send(SignalPlan(signal: pausing ? .stop : .continue, targets: group.processes))
     print("\(pausing ? "Paused" : "Resumed") \(group.app.name) (\(group.processes.count) processes)")
 
 case "kill":

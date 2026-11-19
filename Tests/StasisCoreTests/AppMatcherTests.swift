@@ -22,6 +22,31 @@ private let all = [brave, studio, slack, smartGit]
         #expect(AppMatcher.match("COM.BRAVE.browser", in: all) == .found(brave))
     }
 
+    @Test func bundleIdentifierWinsOverAnotherAppNamedLikeIt() {
+        let impostor = group(50, "com.brave.Browser", bundleId: "x.impostor")
+        #expect(AppMatcher.match("com.brave.Browser", in: [impostor] + all) == .found(brave))
+    }
+
+    @Test func pidPicksOneOfTwoInstancesOfTheSameApp() {
+        let second = group(150, "Brave Browser", bundleId: "com.brave.Browser")
+        #expect(AppMatcher.match("150", in: all + [second]) == .found(second))
+        #expect(AppMatcher.match("100", in: all + [second]) == .found(brave))
+    }
+
+    @Test func pidWinsOverAnAppNamedLikeIt() {
+        let numeric = group(600, "100", bundleId: "x.numeric")
+        #expect(AppMatcher.match("100", in: all + [numeric]) == .found(brave))
+    }
+
+    @Test func numberThatIsNoAppPidMatchesOnlyAnExactName() {
+        let numeric = group(600, "1984", bundleId: "x.numeric")
+        #expect(AppMatcher.match("1984", in: all + [numeric]) == .found(numeric))
+        #expect(AppMatcher.match("198", in: all + [numeric]) == .notFound)
+        #expect(AppMatcher.match("984", in: all + [numeric]) == .notFound)
+        // 101 is a helper process of Brave, not an app.
+        #expect(AppMatcher.match("101", in: [group(100, "Brave Browser", bundleId: "b", stopped: [false, false])]) == .notFound)
+    }
+
     @Test func exactNameWinsOverPrefixOfAnotherApp() {
         let slackish = group(500, "Slack Helper", bundleId: "x.helper")
         #expect(AppMatcher.match("slack", in: all + [slackish]) == .found(slack))

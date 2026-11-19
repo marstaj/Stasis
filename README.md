@@ -72,7 +72,7 @@ running and pokes the app to refresh its icon after a change.
 
 ```
 stasis list [--json] [--processes]      apps with state and memory; JSON is what Raycast reads
-stasis pause <app> / resume <app>       bundle id or name, case-insensitive; a partial name
+stasis pause <app> / resume <app>       pid, bundle id or name, case-insensitive; a partial name
                                         needs 3+ characters and must match exactly one app
 stasis kill <app>                       SIGKILL to the app and its processes, no confirmation
 stasis pause-all [--include-frontmost]  spares the app in front unless told otherwise

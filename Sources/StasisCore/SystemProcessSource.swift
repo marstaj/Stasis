@@ -2,7 +2,7 @@ import Darwin
 import Foundation
 import os
 
-/// Reads the live process table. Pure OS glue; the logic that interprets it is in `ProcessGrouper`.
+/// Reads the live process table and signals its processes. Pure OS glue; the logic that interprets it is in `ProcessGrouper`.
 public enum SystemProcessSource {
     /// `SSTOP` from <sys/proc.h>; the macro is not importable from Swift.
     private static let stoppedState: UInt8 = 4
@@ -34,6 +34,32 @@ public enum SystemProcessSource {
         return []
     }
 
+    /// False once the sampled process has exited, even if another process now has its pid.
+    public static func isCurrent(_ record: ProcessRecord) -> Bool {
+        var mib: [Int32] = [CTL_KERN, KERN_PROC, KERN_PROC_PID, record.pid]
+        var entry = kinfo_proc()
+        var size = MemoryLayout<kinfo_proc>.stride
+        guard sysctl(&mib, 4, &entry, &size, nil, 0) == 0 else {
+            logger.error("sysctl KERN_PROC_PID \(record.pid) failed: \(String(cString: strerror(errno)))")
+            return false
+        }
+        // A pid nobody has is not an error; the call succeeds and returns nothing.
+        return size > 0 && startTimeMicros(of: entry) == record.startTimeMicros
+    }
+
+    /// Signals the process the record was sampled from and returns the errno if that failed.
+    /// A record can be seconds old, so a pid that has since gone to another process is reported
+    /// as `ESRCH` instead of signalled.
+    public static func send(_ signal: SignalPlan.Signal, to record: ProcessRecord) -> Int32? {
+        guard isCurrent(record) else { return ESRCH }
+        return kill(record.pid, signal.number) == 0 ? nil : errno
+    }
+
+    private static func startTimeMicros(of entry: kinfo_proc) -> Int64 {
+        let start = entry.kp_proc.p_un.__p_starttime
+        return Int64(start.tv_sec) * 1_000_000 + Int64(start.tv_usec)
+    }
+
     private static func record(for entry: kinfo_proc, includeUsage: Bool) -> ProcessRecord? {
         var entry = entry
         let pid = entry.kp_proc.p_pid
@@ -47,11 +73,12 @@ public enum SystemProcessSource {
         return ProcessRecord(
             pid: pid,
             parentPid: entry.kp_eproc.e_ppid,
-            name: comm,
+            name: comm.strippingControlCharacters,
             executablePath: executablePath(of: pid) ?? comm,
             isStopped: entry.kp_proc.p_stat == stoppedState,
             residentBytes: usage?.bytes ?? 0,
-            cpuTimeNanos: usage?.cpuNanos ?? 0
+            cpuTimeNanos: usage?.cpuNanos ?? 0,
+            startTimeMicros: startTimeMicros(of: entry)
         )
     }
 

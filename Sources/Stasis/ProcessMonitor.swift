@@ -14,6 +14,7 @@ final class ProcessMonitor {
     private var sampler = CPUSampler()
     private var timer: Timer?
     private var popoverVisible = false
+    private var refreshPending = false
     private let logger = Logger(subsystem: "dev.marstaj.Stasis", category: "monitor")
     private let excludedBundleIdentifiers = Workspace.systemExclusions.union([Bundle.main.bundleIdentifier ?? ""])
 
@@ -49,6 +50,19 @@ final class ProcessMonitor {
         cpuRates = sampler.record(cpuTimes, atNanos: DispatchTime.now().uptimeNanoseconds)
     }
 
+    /// Refreshes shortly, once for any number of calls in between. For the CLI's notification:
+    /// any local process can post it, and each refresh reads the whole process table.
+    func refreshSoon() {
+        guard !refreshPending else { return }
+        refreshPending = true
+        Timer.scheduledTimer(withTimeInterval: 0.1, repeats: false) { [weak self] _ in
+            Task { @MainActor in
+                self?.refreshPending = false
+                self?.refresh()
+            }
+        }
+    }
+
     func cpuRate(of group: AppGroup) -> Double? {
         let rates = group.processes.compactMap { cpuRates[$0.pid] }
         return rates.isEmpty ? nil : rates.reduce(0, +)
@@ -72,12 +86,12 @@ final class ProcessMonitor {
 
     private func send(_ plan: SignalPlan, target: String) {
         lastError = nil
-        for pid in plan.pids where kill(pid, plan.signal.number) != 0 {
-            let code = errno
+        for process in plan.targets {
+            guard let code = SystemProcessSource.send(plan.signal, to: process) else { continue }
             // Killing a parent can take its children down before their turn comes.
             if plan.signal == .kill && code == ESRCH { continue }
             let reason = String(cString: strerror(code))
-            logger.error("kill(\(pid), \(plan.signal.number)) for \(target) failed: \(reason)")
+            logger.error("kill(\(process.pid), \(plan.signal.number)) for \(target) failed: \(reason)")
             lastError = "Could not \(plan.signal.verb) \(target): \(reason)"
         }
         refresh()

@@ -163,8 +163,8 @@ private let terminal = RunningApp(
     @Test func togglingSingleProcessFlipsOnlyThatProcess() {
         let stopped = proc(5, path: "/x", stopped: true)
         let running = proc(6, path: "/x", stopped: false)
-        #expect(SignalPlan.toggle(stopped) == SignalPlan(signal: .continue, pids: [5]))
-        #expect(SignalPlan.toggle(running) == SignalPlan(signal: .stop, pids: [6]))
+        #expect(SignalPlan.toggle(stopped) == SignalPlan(signal: .continue, targets: [stopped]))
+        #expect(SignalPlan.toggle(running) == SignalPlan(signal: .stop, targets: [running]))
     }
 
     @Test func killingAppTargetsEveryProcessWhateverItsPauseState() {
@@ -176,8 +176,44 @@ private let terminal = RunningApp(
     }
 
     @Test func killingSingleProcessTargetsOnlyThatProcess() {
-        #expect(SignalPlan.kill(proc(5, path: "/x", stopped: true)) == SignalPlan(signal: .kill, pids: [5]))
+        let process = proc(5, path: "/x", stopped: true)
+        #expect(SignalPlan.kill(process) == SignalPlan(signal: .kill, targets: [process]))
         #expect(SignalPlan.Signal.kill.number == SIGKILL)
+    }
+}
+
+@Suite struct ProcessIdentityTests {
+    private func ownRecord() throws -> ProcessRecord {
+        try #require(SystemProcessSource.allProcesses(includeUsage: false).first { $0.pid == getpid() })
+    }
+
+    @Test func sampledProcessIsCurrentWhileItRuns() throws {
+        #expect(SystemProcessSource.isCurrent(try ownRecord()))
+    }
+
+    @Test func samePidWithAnotherStartTimeIsNotCurrent() throws {
+        var reused = try ownRecord()
+        reused.startTimeMicros -= 1
+        #expect(!SystemProcessSource.isCurrent(reused))
+    }
+
+    @Test func exitedProcessIsNotCurrent() throws {
+        var exited = try ownRecord()
+        // Above the kernel's highest pid, so no process can have it.
+        exited.pid = 10_000_000
+        #expect(!SystemProcessSource.isCurrent(exited))
+    }
+
+    @Test func signallingAReusedPidReportsNoSuchProcessWithoutSignalling() throws {
+        var reused = try ownRecord()
+        reused.startTimeMicros -= 1
+        // SIGKILL would end the test run if it were sent.
+        #expect(SystemProcessSource.send(.kill, to: reused) == ESRCH)
+    }
+
+    @Test func controlCharactersAreStrippedFromNames() {
+        #expect("Evil\u{1B}[2J\u{07}App\u{9B}".strippingControlCharacters == "Evil[2JApp")
+        #expect("Café 👩‍💻".strippingControlCharacters == "Café 👩‍💻")
     }
 }
 

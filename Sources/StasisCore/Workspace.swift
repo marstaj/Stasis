@@ -53,7 +53,8 @@ public extension RunningApp {
     init(_ application: NSRunningApplication) {
         self.init(
             pid: application.processIdentifier,
-            name: application.localizedName ?? application.bundleIdentifier ?? "pid \(application.processIdentifier)",
+            name: (application.localizedName ?? application.bundleIdentifier ?? "pid \(application.processIdentifier)")
+                .strippingControlCharacters,
             bundleIdentifier: application.bundleIdentifier,
             bundlePath: application.bundleURL?.path
         )

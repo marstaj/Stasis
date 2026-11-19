@@ -40,7 +40,7 @@ final class StatusItemController: NSObject, NSApplicationDelegate, NSPopoverDele
         DistributedNotificationCenter.default().addObserver(
             forName: Workspace.didChangeNotification, object: nil, queue: .main
         ) { [monitor] _ in
-            MainActor.assumeIsolated { monitor.refresh() }
+            MainActor.assumeIsolated { monitor.refreshSoon() }
         }
     }
 

@@ -10,7 +10,9 @@ ICONDIR := build/icon
 ZIP     := build/$(APP).zip
 # Stamped into the bundle so the update check knows which release a build came from. Defaults
 # to the latest release tag; empty outside a tagged checkout, which keeps Info.plist's version.
-VERSION := $(shell git describe --tags --abbrev=0 --match 'v[0-9]*' 2>/dev/null | sed 's/^v//')
+# Also empty for a tag that is not purely dotted numbers: the value is pasted into shell commands
+# below, and a tag name may contain shell syntax.
+VERSION := $(shell git describe --tags --abbrev=0 --match 'v[0-9]*' 2>/dev/null | sed -n 's/^v\([0-9.]*\)$$/\1/p')
 INSTALL := /Applications
 # Where the `stasis` command is symlinked; override with `make install BIN=~/.local/bin`.
 BIN     := /opt/homebrew/bin
