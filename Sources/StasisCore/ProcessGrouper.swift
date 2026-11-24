@@ -54,9 +54,10 @@ public enum ProcessGrouper {
 private extension PauseState {
     var sortRank: Int {
         switch self {
-        case .paused: 0
-        case .partiallyPaused: 1
-        case .running: 2
+        case .notResponding: 0
+        case .paused: 1
+        case .partiallyPaused: 2
+        case .running: 3
         }
     }
 }

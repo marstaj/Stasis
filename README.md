@@ -10,10 +10,14 @@ recover apps that macOS itself paused under memory pressure.
 Each app row shows its memory footprint and CPU rate; expand a row to see and toggle the
 individual processes (browser renderers, JVMs, helpers). Pause state is read from the kernel
 process table, so system-initiated pauses show up without the tool having been involved.
+macOS can also freeze an app under memory pressure without marking it stopped; such an app, like
+any app macOS reports as not responding, is labelled Not Responding and offers Resume, which
+wakes a frozen app and does nothing to one that is merely hung.
 The control at the top sorts the list by name, memory or CPU; the choice is remembered.
 
 Below it, Pause All Except <app> pauses every app but the one in front, which it names; Pause
-All pauses that one too; Resume All resumes everything paused. All three are also in the menu
+All pauses that one too; Resume All resumes everything paused or not responding. Neither pause
+command touches an app that is not responding. All three are also in the menu
 bar icon's right-click menu, together with Quit.
 
 The ✕ at the end of a row kills the app or process with `SIGKILL` (paused processes ignore
@@ -80,7 +84,8 @@ The bundle carries a CLI at `Stasis.app/Contents/Helpers/stasis`; `make install`
 running and pokes the app to refresh its icon after a change.
 
 ```
-stasis list [--json] [--processes]      apps with state and memory; JSON is what Raycast reads
+stasis list [--json] [--processes]      apps with state (running, not-responding, partial,
+                                        paused) and memory; JSON is what Raycast reads
 stasis pause <app> / resume <app>       pid, bundle id or name, case-insensitive; a partial name
                                         needs 3+ characters and must match exactly one app
 stasis kill <app>                       SIGKILL to the app and its processes, no confirmation
@@ -93,7 +98,7 @@ Exit status: 1 usage, 2 no or ambiguous app (candidates on stderr), 3 some signa
 ## Raycast
 
 `raycast/` is a Raycast extension with four commands: Pause / Resume Apps (every app with
-memory and state, Enter pauses a running app or resumes a paused one, the row stays put), Pause
+memory and state, Enter pauses a running app or resumes a paused or not-responding one, the row stays put), Pause
 All Except Front App, Pause All Apps and Resume All Apps, which are also actions inside the first. The list also has a Kill
 action (⌃X) that asks before it kills. It shells out to the CLI at its
 bundle path, so Stasis must be installed in `/Applications`. Needs Node; `make raycast` installs

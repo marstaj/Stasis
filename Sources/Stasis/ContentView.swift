@@ -156,6 +156,7 @@ private struct AppRow: View {
     private var rowBackground: Color {
         switch group.state {
         case .running: .clear
+        case .notResponding: .red.opacity(0.15)
         case .partiallyPaused: .yellow.opacity(0.15)
         case .paused: .orange.opacity(0.2)
         }
@@ -169,16 +170,18 @@ private struct StateLabel: View {
         switch group.state {
         case .running:
             Text("Running").font(.caption).foregroundStyle(.secondary)
+        case .notResponding:
+            stateLabel("Not Responding", systemImage: "exclamationmark.triangle.fill")
         case .partiallyPaused:
-            pausedLabel("\(group.stoppedCount) of \(group.processes.count) paused")
+            stateLabel("\(group.stoppedCount) of \(group.processes.count) paused")
         case .paused:
-            pausedLabel("Paused")
+            stateLabel("Paused")
         }
     }
 
-    /// Untinted: orange or yellow is unreadable on the row's background of the same colour.
-    private func pausedLabel(_ text: String) -> some View {
-        Label(text, systemImage: "pause.fill")
+    /// Untinted: the row's own colour is unreadable on its background of the same colour.
+    private func stateLabel(_ text: String, systemImage: String = "pause.fill") -> some View {
+        Label(text, systemImage: systemImage)
             .font(.caption.weight(.medium))
             .foregroundStyle(.primary)
     }

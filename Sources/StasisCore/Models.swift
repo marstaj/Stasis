@@ -43,17 +43,25 @@ public struct RunningApp: Sendable, Hashable {
     public var name: String
     public var bundleIdentifier: String?
     public var bundlePath: String?
+    /// WindowServer's verdict at sample time; a stopped app is always unresponsive.
+    public var isUnresponsive: Bool
 
-    public init(pid: pid_t, name: String, bundleIdentifier: String?, bundlePath: String?) {
+    public init(
+        pid: pid_t, name: String, bundleIdentifier: String?, bundlePath: String?, isUnresponsive: Bool = false
+    ) {
         self.pid = pid
         self.name = name
         self.bundleIdentifier = bundleIdentifier
         self.bundlePath = bundlePath
+        self.isUnresponsive = isUnresponsive
     }
 }
 
 public enum PauseState: Sendable, Hashable {
     case running
+    /// Unresponsive with no stopped process: hung, or frozen by macOS without being marked
+    /// stopped. `SIGCONT` wakes the latter.
+    case notResponding
     case partiallyPaused
     case paused
 }
@@ -72,7 +80,7 @@ public struct AppGroup: Sendable, Hashable {
 
     public var state: PauseState {
         switch stoppedCount {
-        case 0: .running
+        case 0: app.isUnresponsive ? .notResponding : .running
         case processes.count: .paused
         default: .partiallyPaused
         }

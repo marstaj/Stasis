@@ -24,6 +24,12 @@ private let terminal = RunningApp(
     bundlePath: "/System/Applications/Utilities/Terminal.app"
 )
 
+private func hung(_ app: RunningApp) -> RunningApp {
+    var app = app
+    app.isUnresponsive = true
+    return app
+}
+
 @Suite struct ProcessGrouperTests {
     @Test func claimsMainProcessBundleHelpersAndDescendants() {
         let processes = [
@@ -130,6 +136,42 @@ private let terminal = RunningApp(
         ]
         let groups = ProcessGrouper.group(apps: [brave, studio, terminal], processes: processes)
         #expect(groups.map(\.app.pid) == [200, 300, 100])
+    }
+
+    @Test func unresponsiveAppWithNoStoppedProcessIsNotResponding() {
+        let group = AppGroup(app: hung(brave), processes: [proc(100, path: "/a"), proc(101, path: "/b")])
+        #expect(group.state == .notResponding)
+        #expect(group.state.label == "not-responding")
+    }
+
+    @Test func stoppedProcessesOutrankUnresponsiveness() {
+        let partial = AppGroup(app: hung(brave), processes: [proc(100, path: "/a", stopped: true), proc(101, path: "/b")])
+        let paused = AppGroup(app: hung(brave), processes: [proc(100, path: "/a", stopped: true)])
+        #expect(partial.state == .partiallyPaused)
+        #expect(paused.state == .paused)
+    }
+
+    @Test func sortsNotRespondingBeforePaused() {
+        let processes = [proc(100, path: "/a"), proc(200, path: "/b", stopped: true)]
+        let groups = ProcessGrouper.group(apps: [studio, hung(brave)], processes: processes)
+        #expect(groups.map(\.app.pid) == [100, 200])
+    }
+}
+
+@Suite struct NotRespondingSignalTests {
+    private let frozen = AppGroup(app: hung(brave), processes: [proc(100, path: "/a"), proc(101, path: "/b")])
+    private let running = AppGroup(app: studio, processes: [proc(200, path: "/b")])
+
+    @Test func togglingNotRespondingAppContinuesEveryProcess() {
+        let plan = SignalPlan.toggle(frozen)
+        #expect(plan.signal == .continue)
+        #expect(plan.pids == [100, 101])
+    }
+
+    @Test func pauseAllSkipsNotRespondingAndResumeAllIncludesThem() {
+        #expect(SignalPlan.pauseAllTargets(in: [frozen, running], sparing: nil).map(\.app.pid) == [200])
+        #expect(SignalPlan.stopAll([frozen, running]).pids == [200])
+        #expect(SignalPlan.continueAll([frozen, running]).pids == [100, 101])
     }
 }
 

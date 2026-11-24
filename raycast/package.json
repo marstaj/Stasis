@@ -28,7 +28,7 @@
     {
       "name": "resume-all",
       "title": "Resume All Apps",
-      "description": "Resume every paused or partially paused app.",
+      "description": "Resume every paused, partially paused or not-responding app.",
       "mode": "no-view"
     }
   ],

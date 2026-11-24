@@ -40,6 +40,7 @@ public extension PauseState {
     var label: String {
         switch self {
         case .running: "running"
+        case .notResponding: "not-responding"
         case .partiallyPaused: "partial"
         case .paused: "paused"
         }

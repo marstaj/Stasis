@@ -24,8 +24,9 @@ final class ProcessMonitor {
         setPopoverVisible(false)
     }
 
-    /// Fast sampling with memory and CPU while the popover is open; slow pause-state-only sampling
-    /// in the background so the menu bar icon still reflects system-initiated pauses.
+    /// Fast sampling with memory and CPU while the popover is open; slow state-only sampling in
+    /// the background so the menu bar icon still reflects system-initiated pauses and apps that
+    /// stopped responding.
     func setPopoverVisible(_ visible: Bool) {
         popoverVisible = visible
         timer?.invalidate()

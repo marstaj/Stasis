@@ -56,7 +56,8 @@ public extension RunningApp {
             name: (application.localizedName ?? application.bundleIdentifier ?? "pid \(application.processIdentifier)")
                 .strippingControlCharacters,
             bundleIdentifier: application.bundleIdentifier,
-            bundlePath: application.bundleURL?.path
+            bundlePath: application.bundleURL?.path,
+            isUnresponsive: Responsiveness.isUnresponsive(pid: application.processIdentifier)
         )
     }
 }

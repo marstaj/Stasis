@@ -5,7 +5,7 @@ import { promisify } from "node:util";
 export const CLI = "/Applications/Stasis.app/Contents/Helpers/stasis";
 
 /** Mirrors `AppSummary` in StasisCore; `stasis list --json` is the contract. */
-export type AppState = "running" | "partial" | "paused";
+export type AppState = "running" | "not-responding" | "partial" | "paused";
 
 export interface App {
   pid: number;

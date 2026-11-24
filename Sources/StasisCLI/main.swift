@@ -11,7 +11,7 @@ let usage = """
       resume <app>                     resume an app (pid, bundle id or name)
       kill <app>                       kill an app with SIGKILL; unsaved work is lost
       pause-all [--include-frontmost]  pause every app except the one in front
-      resume-all                       resume every paused or partially paused app
+      resume-all                       resume every paused, partially paused or not-responding app
 
     exit status: 1 usage, 2 no or ambiguous app, 3 a signal failed
     """
@@ -70,7 +70,7 @@ func printTable(_ groups: [AppGroup], processes: Bool) {
     let width = groups.map(\.app.name.count).max() ?? 0
     for group in groups {
         let memory = formatter.string(fromByteCount: Int64(group.totalResidentBytes))
-        print("\(group.app.name.padding(toLength: width, withPad: " ", startingAt: 0))  \(group.state.label.padding(toLength: 7, withPad: " ", startingAt: 0))  \(memory)")
+        print("\(group.app.name.padding(toLength: width, withPad: " ", startingAt: 0))  \(group.state.label.padding(toLength: 14, withPad: " ", startingAt: 0))  \(memory)")
         guard processes else { continue }
         for process in group.processes {
             let memory = formatter.string(fromByteCount: Int64(process.residentBytes))

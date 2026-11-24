@@ -51,7 +51,8 @@ export default function Command() {
     <List isLoading={isLoading} searchBarPlaceholder="Pause or resume which app?">
       <List.EmptyView title="No running apps" />
       {apps.map((app) => {
-        // Enter on a partially paused app resumes it, like the menu bar; Pause stays available under ⌘K.
+        // Enter on a partially paused or not-responding app resumes it, like the menu bar; for a
+        // partially paused one Pause stays available under ⌘K.
         const primary = app.state === "running" ? "pause" : "resume";
         const secondary = primary === "pause" ? "resume" : "pause";
         return (
@@ -98,6 +99,8 @@ function stateTag(app: App): List.Item.Accessory {
   switch (app.state) {
     case "running":
       return { tag: { value: "Running", color: Color.SecondaryText } };
+    case "not-responding":
+      return { tag: { value: "Not Responding", color: Color.Red } };
     case "partial":
       return { tag: { value: `${app.pausedCount}/${app.processCount} paused`, color: Color.Yellow } };
     case "paused":

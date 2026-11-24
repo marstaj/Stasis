@@ -29,8 +29,9 @@ public struct SignalPlan: Sendable, Hashable {
         self.targets = targets
     }
 
-    /// A running app is stopped whole; a paused or partially paused app is continued whole,
-    /// since a partial pause is almost always the system's doing and never what the user wants.
+    /// A running app is stopped whole; a paused, partially paused or not-responding app is
+    /// continued whole, since a partial pause is almost always the system's doing and never what
+    /// the user wants.
     public static func toggle(_ group: AppGroup) -> SignalPlan {
         SignalPlan(signal: group.state == .running ? .stop : .continue, targets: group.processes)
     }
@@ -48,19 +49,23 @@ public struct SignalPlan: Sendable, Hashable {
         SignalPlan(signal: .kill, targets: [process])
     }
 
-    /// The apps a "pause all" stops: every app that is not already fully paused, except the
-    /// spared one (the app the user is in).
+    /// The apps a "pause all" stops: every running or partially paused app, except the spared
+    /// one (the app the user is in).
     public static func pauseAllTargets(in groups: [AppGroup], sparing spared: pid_t?) -> [AppGroup] {
-        groups.filter { $0.app.pid != spared && $0.state != .paused }
+        groups.filter { $0.app.pid != spared && $0.state.isPausable }
     }
 
-    /// Stops every process of every app that is not already fully paused.
+    /// Stops every process of every running or partially paused app.
     public static func stopAll(_ groups: [AppGroup]) -> SignalPlan {
-        SignalPlan(signal: .stop, targets: groups.filter { $0.state != .paused }.flatMap(\.processes))
+        SignalPlan(signal: .stop, targets: groups.filter(\.state.isPausable).flatMap(\.processes))
     }
 
-    /// Continues every process of every app that has at least one stopped process.
+    /// Continues every process of every app that is paused, partially paused or not responding.
     public static func continueAll(_ groups: [AppGroup]) -> SignalPlan {
         SignalPlan(signal: .continue, targets: groups.filter { $0.state != .running }.flatMap(\.processes))
     }
+}
+
+private extension PauseState {
+    var isPausable: Bool { self == .running || self == .partiallyPaused }
 }
