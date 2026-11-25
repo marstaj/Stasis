@@ -6,6 +6,7 @@ public struct ProcessRecord: Sendable, Hashable {
     public var parentPid: pid_t
     public var name: String
     public var executablePath: String
+    /// Stopped by a signal or suspended at the Mach level; `SIGCONT` undoes both.
     public var isStopped: Bool
     public var residentBytes: UInt64
     /// Cumulative user + system CPU time; rates are derived by `CPUSampler`.
@@ -59,8 +60,8 @@ public struct RunningApp: Sendable, Hashable {
 
 public enum PauseState: Sendable, Hashable {
     case running
-    /// Unresponsive with no stopped process: hung, or frozen by macOS without being marked
-    /// stopped. `SIGCONT` wakes the latter.
+    /// Unresponsive with no stopped process: hung, or frozen by macOS in a way the suspend
+    /// count could not show. `SIGCONT` wakes the latter.
     case notResponding
     case partiallyPaused
     case paused

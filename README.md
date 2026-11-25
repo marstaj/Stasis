@@ -9,15 +9,17 @@ recover apps that macOS itself paused under memory pressure.
 
 Each app row shows its memory footprint and CPU rate; expand a row to see and toggle the
 individual processes (browser renderers, JVMs, helpers). Pause state is read from the kernel
-process table, so system-initiated pauses show up without the tool having been involved.
-macOS can also freeze an app under memory pressure without marking it stopped; such an app, like
-any app macOS reports as not responding, is labelled Not Responding and offers Resume, which
+process table and each process's Mach suspend count, so system-initiated pauses show up without
+the tool having been involved, including apps macOS freezes under memory pressure without
+marking them stopped (usually just the main process, so they show as partially paused).
+An app macOS reports as not responding is labelled Not Responding and offers Resume, which
 wakes a frozen app and does nothing to one that is merely hung.
 The control at the top sorts the list by name, memory or CPU; the choice is remembered.
 
 Below it, Pause All Except <app> pauses every app but the one in front, which it names; Pause
 All pauses that one too; Resume All resumes everything paused or not responding. Neither pause
-command touches an app that is not responding. All three are also in the menu
+command touches an app that is not responding; an app macOS has partly frozen counts as
+partially paused, so Pause All stops the rest of it. All three are also in the menu
 bar icon's right-click menu, together with Quit.
 
 The ✕ at the end of a row kills the app or process with `SIGKILL` (paused processes ignore

@@ -70,16 +70,41 @@ public enum SystemProcessSource {
             }
         }
         let usage = includeUsage ? resourceUsage(of: pid) : nil
+        let path = executablePath(of: pid) ?? comm
+        // macOS keeps idle app extensions (widgets, intents) suspended as a matter of course;
+        // counting that would show every app that bundles one as partially paused.
+        let isExtension = path.contains(".appex/")
         return ProcessRecord(
             pid: pid,
             parentPid: entry.kp_eproc.e_ppid,
             name: comm.strippingControlCharacters,
-            executablePath: executablePath(of: pid) ?? comm,
-            isStopped: entry.kp_proc.p_stat == stoppedState,
+            executablePath: path,
+            isStopped: entry.kp_proc.p_stat == stoppedState || (!isExtension && isSuspended(pid)),
             residentBytes: usage?.bytes ?? 0,
             cpuTimeNanos: usage?.cpuNanos ?? 0,
             startTimeMicros: startTimeMicros(of: entry)
         )
+    }
+
+    /// True while the task's Mach suspend count is above zero. `SIGSTOP` raises it too, but macOS
+    /// freezes apps under memory pressure through it alone, leaving `p_stat` untouched.
+    /// False when the task cannot be inspected (another user's process, or one that just exited).
+    private static func isSuspended(_ pid: pid_t) -> Bool {
+        var task: mach_port_name_t = 0
+        guard task_name_for_pid(mach_task_self_, pid, &task) == KERN_SUCCESS else { return false }
+        defer { mach_port_deallocate(mach_task_self_, task) }
+        var info = mach_task_basic_info()
+        var count = mach_msg_type_number_t(MemoryLayout<mach_task_basic_info>.size / MemoryLayout<natural_t>.size)
+        let status = withUnsafeMutablePointer(to: &info) { pointer in
+            pointer.withMemoryRebound(to: integer_t.self, capacity: Int(count)) {
+                task_info(task, task_flavor_t(MACH_TASK_BASIC_INFO), $0, &count)
+            }
+        }
+        guard status == KERN_SUCCESS else {
+            logger.error("task_info for \(pid) failed: \(String(cString: mach_error_string(status)))")
+            return false
+        }
+        return info.suspend_count > 0
     }
 
     private static func executablePath(of pid: pid_t) -> String? {
