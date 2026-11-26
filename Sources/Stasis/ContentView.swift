@@ -8,8 +8,11 @@ struct ContentView: View {
     let monitor: ProcessMonitor
     let updates: UpdateChecker
     @AppStorage("sortOrder") private var sortOrder = AppSortOrder.name
+    @AppStorage("appFilter") private var filter = AppFilter.all
+    @AppStorage("pausedFirst") private var pausedFirst = false
 
     var body: some View {
+        let visible = filter.filtered(monitor.groups)
         VStack(spacing: 0) {
             if monitor.groups.isEmpty {
                 Text("No running apps")
@@ -22,35 +25,67 @@ struct ContentView: View {
                     }
                     .pickerStyle(.segmented)
                     HStack {
-                        if let front = monitor.frontApp {
-                            Button("Pause All Except \(front.name)") { monitor.pauseAll(sparingFrontApp: true) }
-                                .disabled(monitor.pauseAllTargets(sparingFrontApp: true).isEmpty)
+                        Picker("Show", selection: $filter) {
+                            ForEach(AppFilter.allCases, id: \.self) { Text($0.title).tag($0) }
+                        }
+                        .pickerStyle(.segmented)
+                        Toggle("Paused first", isOn: $pausedFirst)
+                            .toggleStyle(.checkbox)
+                            .fixedSize()
+                    }
+                    HStack {
+                        if let front = monitor.frontApp, filter.includes(front) {
+                            Button("Pause All Except \(front.name)") { monitor.pauseAll(sparingFrontApp: true, filter: filter) }
+                                .disabled(monitor.pauseAllTargets(sparingFrontApp: true, filter: filter).isEmpty)
                                 .lineLimit(1)
                         }
-                        Button("Pause All") { monitor.pauseAll(sparingFrontApp: false) }
-                            .disabled(monitor.pauseAllTargets(sparingFrontApp: false).isEmpty)
+                        Button("Pause All") { monitor.pauseAll(sparingFrontApp: false, filter: filter) }
+                            .disabled(monitor.pauseAllTargets(sparingFrontApp: false, filter: filter).isEmpty)
                             .fixedSize()
                         Spacer()
-                        Button("Resume All") { monitor.resumeAll() }
-                            .disabled(!monitor.anyPaused)
+                        Button("Resume All") { monitor.resumeAll(filter: filter) }
+                            .disabled(!visible.contains { $0.state != .running })
                             .fixedSize()
+                    }
+                    let hidden = filter.hiddenNotRunning(in: monitor.groups).count
+                    if hidden > 0, let other = filter.complement {
+                        HStack(spacing: 4) {
+                            Image(systemName: "info.circle")
+                            Text(hidden == 1
+                                ? "1 paused \(other.kindName) app is hidden"
+                                : "\(hidden) paused \(other.kindName) apps are hidden")
+                            Spacer()
+                            Button("Show") { filter = other }
+                                .buttonStyle(.link)
+                        }
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                     }
                 }
                 .padding(.horizontal, 10)
                 .padding(.vertical, 8)
                 Divider()
-                // fixedSize makes the ScrollView take its ideal height (its content height) instead
-                // of the near-zero height the popover proposes; the frame caps it.
-                ScrollView {
-                    VStack(spacing: 2) {
-                        ForEach(sortOrder.sorted(monitor.groups, cpuRate: monitor.cpuRate), id: \.app.pid) { group in
-                            AppRow(group: group, monitor: monitor)
+                if visible.isEmpty {
+                    Text(filter.emptyListText)
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, minHeight: 60)
+                } else {
+                    // fixedSize makes the ScrollView take its ideal height (its content height) instead
+                    // of the near-zero height the popover proposes; the frame caps it.
+                    ScrollView {
+                        VStack(spacing: 2) {
+                            ForEach(
+                                sortOrder.sorted(visible, pausedFirst: pausedFirst, cpuRate: monitor.cpuRate),
+                                id: \.app.pid
+                            ) { group in
+                                AppRow(group: group, monitor: monitor)
+                            }
                         }
+                        .padding(6)
                     }
-                    .padding(6)
+                    .frame(maxHeight: 520)
+                    .fixedSize(horizontal: false, vertical: true)
                 }
-                .frame(maxHeight: 520)
-                .fixedSize(horizontal: false, vertical: true)
             }
             Divider()
             footer
@@ -94,6 +129,26 @@ private extension AppSortOrder {
         case .cpu: "CPU"
         }
     }
+}
+
+private extension AppFilter {
+    var title: String {
+        switch self {
+        case .all: "All"
+        case .dock: "Dock"
+        case .menuBar: "Menu Bar"
+        }
+    }
+
+    var kindName: String {
+        switch self {
+        case .all: "running"
+        case .dock: "Dock"
+        case .menuBar: "menu bar"
+        }
+    }
+
+    var emptyListText: String { "No \(kindName) apps" }
 }
 
 private struct AppRow: View {

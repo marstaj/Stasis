@@ -14,13 +14,24 @@ the tool having been involved, including apps macOS freezes under memory pressur
 marking them stopped (usually just the main process, so they show as partially paused).
 An app macOS reports as not responding is labelled Not Responding and offers Resume, which
 wakes a frozen app and does nothing to one that is merely hung.
-The control at the top sorts the list by name, memory or CPU; the choice is remembered.
 
-Below it, Pause All Except <app> pauses every app but the one in front, which it names; Pause
+Menu bar apps without a Dock icon (Raycast, Shottr, AltTab, Logi Options+, JetBrains Toolbox)
+are listed too, so a frozen one can be seen and resumed, and each can be paused on its own. An
+app that hides its Dock icon when its window closes (Granola) counts as a menu bar app until it
+opens one again.
+
+The controls at the top sort the list by name, memory or CPU and show all apps, only Dock apps
+or only menu bar apps; Paused first lists everything paused, partially paused or not responding
+ahead of the rest. The choices are remembered. When the filter hides an app that is paused or
+not responding, a note under the buttons says how many, with a link to the filter that shows them.
+
+Below them, Pause All Except <app> pauses every app but the one in front, which it names; Pause
 All pauses that one too; Resume All resumes everything paused or not responding. Neither pause
-command touches an app that is not responding; an app macOS has partly frozen counts as
-partially paused, so Pause All stops the rest of it. All three are also in the menu
-bar icon's right-click menu, together with Quit.
+command touches an app that is not responding or a menu bar app: pausing a launcher, a screenshot
+hotkey or a mouse driver is rarely what a bulk pause means. An app macOS has partly frozen counts
+as partially paused, so Pause All stops the rest of it. In the popover all three act only on the
+apps shown. They are also in the menu bar icon's right-click menu, together with Quit, where
+they act on every app.
 
 The ✕ at the end of a row kills the app or process with `SIGKILL` (paused processes ignore
 anything gentler). It takes two clicks: the first arms it, moving the pointer away disarms it.
@@ -110,8 +121,10 @@ extension's source.
 
 ## Notes
 
-- Finder, Dock, Raycast and Stasis itself are hidden from the list. Raycast because a paused
-  launcher could not run the resume command.
+- Finder, Dock and Stasis itself are hidden from the list, as are Apple's own menu bar agents
+  (anything under `/System`) and helpers that a listed app starts or that live inside its
+  bundle, which count as that app's processes. A paused Raycast cannot run the resume command; use the popover or
+  `stasis resume raycast`.
 - Processes of other users cannot be signalled without root; the footer shows the error.
 - Sampling: every 2 s while the popover is open, every 30 s otherwise (keeps the menu bar icon
   in sync when the system pauses something).

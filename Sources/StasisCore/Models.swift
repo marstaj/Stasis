@@ -38,7 +38,7 @@ extension String {
     }
 }
 
-/// A GUI application as reported by the workspace (Dock-visible apps only).
+/// A GUI application as reported by the workspace: a Dock app or a listed menu bar app.
 public struct RunningApp: Sendable, Hashable {
     public var pid: pid_t
     public var name: String
@@ -46,15 +46,20 @@ public struct RunningApp: Sendable, Hashable {
     public var bundlePath: String?
     /// WindowServer's verdict at sample time; a stopped app is always unresponsive.
     public var isUnresponsive: Bool
+    /// False for menu bar apps (launchers, screenshot tools, device agents). They can be paused by
+    /// hand but Pause All leaves them alone, since losing them is rarely what a bulk pause means.
+    public var hasDockIcon: Bool
 
     public init(
-        pid: pid_t, name: String, bundleIdentifier: String?, bundlePath: String?, isUnresponsive: Bool = false
+        pid: pid_t, name: String, bundleIdentifier: String?, bundlePath: String?, isUnresponsive: Bool = false,
+        hasDockIcon: Bool = true
     ) {
         self.pid = pid
         self.name = name
         self.bundleIdentifier = bundleIdentifier
         self.bundlePath = bundlePath
         self.isUnresponsive = isUnresponsive
+        self.hasDockIcon = hasDockIcon
     }
 }
 

@@ -5,7 +5,14 @@ public enum AppSortOrder: String, CaseIterable, Sendable {
     case name, memory, cpu
 
     /// Memory and CPU sort largest first, apps without a CPU rate yet last; ties fall back to name.
-    public func sorted(_ groups: [AppGroup], cpuRate: (AppGroup) -> Double?) -> [AppGroup] {
+    /// `pausedFirst` moves every app that is not running ahead of the rest, each part in this order.
+    public func sorted(_ groups: [AppGroup], pausedFirst: Bool = false, cpuRate: (AppGroup) -> Double?) -> [AppGroup] {
+        let sorted = ordered(groups, cpuRate: cpuRate)
+        guard pausedFirst else { return sorted }
+        return sorted.filter { $0.state != .running } + sorted.filter { $0.state == .running }
+    }
+
+    private func ordered(_ groups: [AppGroup], cpuRate: (AppGroup) -> Double?) -> [AppGroup] {
         func byName(_ lhs: AppGroup, _ rhs: AppGroup) -> Bool {
             let order = lhs.app.name.localizedCaseInsensitiveCompare(rhs.app.name)
             // The pid keeps two instances of one app from swapping places between refreshes.

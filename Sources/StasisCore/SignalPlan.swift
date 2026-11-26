@@ -49,15 +49,15 @@ public struct SignalPlan: Sendable, Hashable {
         SignalPlan(signal: .kill, targets: [process])
     }
 
-    /// The apps a "pause all" stops: every running or partially paused app, except the spared
-    /// one (the app the user is in).
+    /// The apps a "pause all" stops: every running or partially paused Dock app, except the
+    /// spared one (the app the user is in).
     public static func pauseAllTargets(in groups: [AppGroup], sparing spared: pid_t?) -> [AppGroup] {
-        groups.filter { $0.app.pid != spared && $0.state.isPausable }
+        groups.filter { $0.app.pid != spared && $0.isBulkPausable }
     }
 
-    /// Stops every process of every running or partially paused app.
+    /// Stops every process of every running or partially paused Dock app.
     public static func stopAll(_ groups: [AppGroup]) -> SignalPlan {
-        SignalPlan(signal: .stop, targets: groups.filter(\.state.isPausable).flatMap(\.processes))
+        SignalPlan(signal: .stop, targets: groups.filter(\.isBulkPausable).flatMap(\.processes))
     }
 
     /// Continues every process of every app that is paused, partially paused or not responding.
@@ -66,6 +66,6 @@ public struct SignalPlan: Sendable, Hashable {
     }
 }
 
-private extension PauseState {
-    var isPausable: Bool { self == .running || self == .partiallyPaused }
+private extension AppGroup {
+    var isBulkPausable: Bool { app.hasDockIcon && (state == .running || state == .partiallyPaused) }
 }

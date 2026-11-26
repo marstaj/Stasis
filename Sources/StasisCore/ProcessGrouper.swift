@@ -4,7 +4,9 @@ public enum ProcessGrouper {
     /// Assigns processes to the apps they belong to. Each process is claimed by at most one app:
     /// app main processes first, then descendants by parent pid, then anything whose executable
     /// lives inside the app bundle (helpers that reparented to launchd). Apps whose main process
-    /// is missing from the table have exited and are dropped.
+    /// is missing from the table have exited and are dropped. A menu bar app descended from
+    /// another listed app or inside its bundle is that app's helper (an IDE's embedded browser, a
+    /// login item) and gets no row.
     public static func group(
         apps: [RunningApp],
         processes: [ProcessRecord],
@@ -12,8 +14,20 @@ public enum ProcessGrouper {
     ) -> [AppGroup] {
         let byPid = Dictionary(processes.map { ($0.pid, $0) }) { $1 }
         let childrenByParent = Dictionary(grouping: processes, by: \.parentPid)
-        let apps = apps.filter { app in
+        var apps = apps.filter { app in
             byPid[app.pid] != nil && !(app.bundleIdentifier.map(excludedBundleIdentifiers.contains) ?? false)
+        }
+        let appPids = Set(apps.map(\.pid))
+        let bundlePrefixes = apps.compactMap(\.bundlePath).map { $0.hasSuffix("/") ? $0 : $0 + "/" }
+        apps.removeAll { app in
+            guard !app.hasDockIcon else { return false }
+            if let path = app.bundlePath, bundlePrefixes.contains(where: path.hasPrefix) { return true }
+            var pid = byPid[app.pid]!.parentPid
+            while pid > 1, let parent = byPid[pid] {
+                if appPids.contains(pid) { return true }
+                pid = parent.parentPid
+            }
+            return false
         }
 
         // Claiming every main process up front keeps a descendant walk from swallowing another

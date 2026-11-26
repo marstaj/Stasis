@@ -37,7 +37,7 @@ final class ProcessMonitor {
     }
 
     func refresh() {
-        let running = Workspace.regularApplications()
+        let running = Workspace.listedApplications()
         icons = Dictionary(running.compactMap { app in app.icon.map { (app.processIdentifier, $0) } }) { $1 }
         groups = Workspace.snapshot(of: running, includeUsage: popoverVisible, excluding: excludedBundleIdentifiers)
         guard popoverVisible else {
@@ -92,19 +92,21 @@ final class ProcessMonitor {
         return groups.first { $0.app.pid == pid }?.app
     }
 
-    func pauseAllTargets(sparingFrontApp: Bool) -> [AppGroup] {
-        SignalPlan.pauseAllTargets(in: groups, sparing: sparingFrontApp ? frontApp?.pid : nil)
+    /// The popover passes its filter so its buttons act on the apps it shows; the right-click
+    /// menu acts on every app.
+    func pauseAllTargets(sparingFrontApp: Bool, filter: AppFilter = .all) -> [AppGroup] {
+        SignalPlan.pauseAllTargets(in: filter.filtered(groups), sparing: sparingFrontApp ? frontApp?.pid : nil)
     }
 
-    func pauseAll(sparingFrontApp: Bool) {
+    func pauseAll(sparingFrontApp: Bool, filter: AppFilter = .all) {
         // The background sample can be 30 s old.
         refresh()
-        send(SignalPlan.stopAll(pauseAllTargets(sparingFrontApp: sparingFrontApp)), target: "all apps")
+        send(SignalPlan.stopAll(pauseAllTargets(sparingFrontApp: sparingFrontApp, filter: filter)), target: "all apps")
     }
 
-    func resumeAll() {
+    func resumeAll(filter: AppFilter = .all) {
         refresh()
-        send(SignalPlan.continueAll(groups), target: "all apps")
+        send(SignalPlan.continueAll(filter.filtered(groups)), target: "all apps")
     }
 
     private func send(_ plan: SignalPlan, target: String) {

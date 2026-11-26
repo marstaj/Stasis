@@ -10,7 +10,7 @@ let usage = """
       pause <app>                      pause an app (pid, bundle id or name)
       resume <app>                     resume an app (pid, bundle id or name)
       kill <app>                       kill an app with SIGKILL; unsaved work is lost
-      pause-all [--include-frontmost]  pause every app except the one in front
+      pause-all [--include-frontmost]  pause every Dock app except the one in front
       resume-all                       resume every paused, partially paused or not-responding app
 
     exit status: 1 usage, 2 no or ambiguous app, 3 a signal failed
@@ -28,7 +28,7 @@ func fail(_ message: String, code: Int32) -> Never {
 }
 
 func snapshot(includeUsage: Bool) -> [AppGroup] {
-    Workspace.snapshot(of: Workspace.regularApplications(), includeUsage: includeUsage)
+    Workspace.snapshot(of: Workspace.listedApplications(), includeUsage: includeUsage)
 }
 
 /// Sends the plan, reports every failure, and tells the menu bar app to refresh.
