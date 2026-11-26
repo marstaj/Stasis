@@ -18,7 +18,10 @@ final class ProcessMonitor {
     private let logger = Logger(subsystem: "dev.marstaj.Stasis", category: "monitor")
     private let excludedBundleIdentifiers = Workspace.systemExclusions.union([Bundle.main.bundleIdentifier ?? ""])
 
-    var anyPaused: Bool { groups.contains { $0.state != .running } }
+    /// Apps that are paused, partially paused or not responding; drives the menu bar icon and badge.
+    var pausedCount: Int { groups.lazy.filter { $0.state != .running }.count }
+
+    var anyPaused: Bool { pausedCount > 0 }
 
     init() {
         setPopoverVisible(false)

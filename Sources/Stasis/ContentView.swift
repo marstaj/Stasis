@@ -10,6 +10,7 @@ struct ContentView: View {
     @AppStorage("sortOrder") private var sortOrder = AppSortOrder.name
     @AppStorage("appFilter") private var filter = AppFilter.all
     @AppStorage("pausedFirst") private var pausedFirst = false
+    @AppStorage(Preferences.showPausedBadge) private var showPausedBadge = true
 
     var body: some View {
         let visible = filter.filtered(monitor.groups)
@@ -100,8 +101,12 @@ struct ContentView: View {
             if let error = monitor.lastError {
                 Text(error).font(.caption).foregroundStyle(.red)
             }
-            HStack {
-                LaunchAtLoginToggle()
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 4) {
+                    LaunchAtLoginToggle()
+                    Toggle("Show paused count in menu bar", isOn: $showPausedBadge)
+                        .toggleStyle(.checkbox)
+                }
                 Spacer()
                 Button("Quit") { NSApp.terminate(nil) }
                     .keyboardShortcut("q")

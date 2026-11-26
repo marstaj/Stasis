@@ -36,6 +36,10 @@ they act on every app.
 The ✕ at the end of a row kills the app or process with `SIGKILL` (paused processes ignore
 anything gentler). It takes two clicks: the first arms it, moving the pointer away disarms it.
 
+While any app is paused, partially paused or not responding, the menu bar icon switches to its
+filled variant and carries a badge with how many (99+ above that). The badge has its own
+checkbox in the popover footer.
+
 Pausing frees CPU, not RAM. A paused app keeps its memory until the compressor or swap takes it.
 
 ## Install
